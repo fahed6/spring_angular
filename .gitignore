@@ -1,0 +1,21 @@
+# Spring Boot 
+target/ 
+.idea/ 
+*.class 
+*.log 
+.DS_Store 
+Commande ECHO activ‚e.
+# Angular 
+node_modules/ 
+dist/ 
+.angular/ 
+tmp/ 
+Commande ECHO activ‚e.
+# IDE 
+.vscode/ 
+.idea/ 
+*.iml 
+Commande ECHO activ‚e.
+# Environment 
+.env 
+application-local.properties 
