@@ -1,0 +1,108 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Paiements</h1>
+    <p class="page-sub">Gestion des paiements étudiants</p>
+  </div>
+  <button type="button" class="btn-primary" (click)="openAdd()">+ Nouveau paiement</button>
+</div>
+
+<div class="mb-4">
+  <select [(ngModel)]="selectedStudentId" (change)="load()" class="select-field max-w-xs" title="Filtrer par étudiant">
+    <option [value]="null">Tous les étudiants</option>
+    <option *ngFor="let s of students" [value]="s.id">{{ s.firstName }} {{ s.lastName }}</option>
+  </select>
+</div>
+
+<div class="card-table">
+  <table class="w-full border-collapse">
+    <thead>
+      <tr>
+        <th class="table-th">Étudiant</th>
+        <th class="table-th">Montant</th>
+        <th class="table-th">Date</th>
+        <th class="table-th">Méthode</th>
+        <th class="table-th">Statut</th>
+        <th class="table-th">Description</th>
+        <th class="table-th">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let p of payments">
+        <td class="table-td font-medium">{{ studentName(p.studentId) }}</td>
+        <td class="table-td font-semibold">{{ p.amount }} DZD</td>
+        <td class="table-td">{{ p.paidAt }}</td>
+        <td class="table-td">{{ methodLabel(p.method) }}</td>
+        <td class="table-td"><span class="badge" [class]="statusClass(p.status)">{{ p.status }}</span></td>
+        <td class="table-td">{{ p.description || '—' }}</td>
+        <td class="table-td">
+          <div class="flex gap-2">
+            <button type="button" class="btn-edit" (click)="openEdit(p)">Modifier</button>
+            <button type="button" class="btn-danger" (click)="delete(p)">Supprimer</button>
+          </div>
+        </td>
+      </tr>
+      <tr *ngIf="payments.length === 0">
+        <td colspan="7" class="table-td text-center py-10">Aucun paiement enregistré.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal -->
+<div *ngIf="showModal" class="ent-modal-backdrop" (click)="showModal=false">
+  <div class="ent-modal" (click)="$event.stopPropagation()">
+    <div class="ent-modal-header">
+      <span class="ent-modal-title">{{ isEdit ? 'Modifier paiement' : 'Nouveau paiement' }}</span>
+      <button type="button" class="ent-modal-close" (click)="showModal=false">✕</button>
+    </div>
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="ent-modal-body space-y-4">
+        <div>
+          <label class="form-label" for="pay-student">Étudiant *</label>
+          <select id="pay-student" formControlName="studentId" class="select-field" title="Étudiant">
+            <option [value]="0" disabled>Choisir un étudiant</option>
+            <option *ngFor="let s of students" [value]="s.id">{{ s.firstName }} {{ s.lastName }}</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div>
+            <label class="form-label" for="amount">Montant (DZD) *</label>
+            <input id="amount" formControlName="amount" type="number"
+                   class="input-field" min="0" step="100" title="Montant" />
+          </div>
+          <div>
+            <label class="form-label" for="paidAt">Date de paiement *</label>
+            <input id="paidAt" formControlName="paidAt" type="date"
+                   class="input-field" title="Date de paiement" />
+          </div>
+          <div>
+            <label class="form-label" for="method">Méthode</label>
+            <select id="method" formControlName="method" class="select-field" title="Méthode de paiement">
+              <option value="CASH">Espèces</option>
+              <option value="CARD">Carte</option>
+              <option value="TRANSFER">Virement</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="pay-status">Statut</label>
+            <select id="pay-status" formControlName="status" class="select-field" title="Statut du paiement">
+              <option value="PAID">PAID</option>
+              <option value="PENDING">PENDING</option>
+              <option value="PARTIAL">PARTIAL</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="form-label" for="description">Description (optionnel)</label>
+          <input id="description" formControlName="description" class="input-field"
+                 placeholder="Ex: Frais d'inscription" title="Description" />
+        </div>
+        <div *ngIf="error" class="error-box">{{ error }}</div>
+      </div>
+      <div class="ent-modal-footer">
+        <button type="button" class="btn-secondary" (click)="showModal=false">Annuler</button>
+        <button type="submit" class="btn-primary" [disabled]="form.invalid">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>

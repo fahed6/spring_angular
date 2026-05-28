@@ -1,0 +1,92 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Planning</h1>
+    <p class="page-sub">Gestion des séances de conduite et de code</p>
+  </div>
+  <button type="button" class="btn-primary" (click)="openAdd()">+ Nouvelle séance</button>
+</div>
+
+<div class="card-table">
+  <table class="w-full border-collapse">
+    <thead>
+      <tr>
+        <th class="table-th">Étudiant</th>
+        <th class="table-th">Date &amp; Heure</th>
+        <th class="table-th">Type</th>
+        <th class="table-th">Statut</th>
+        <th class="table-th">Moniteur</th>
+        <th class="table-th">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let p of planning">
+        <td class="table-td font-medium">{{ p.studentName }}</td>
+        <td class="table-td">{{ formatDate(p.scheduledAt) }}</td>
+        <td class="table-td"><span class="badge" [class]="typeClass(p.type)">{{ p.type }}</span></td>
+        <td class="table-td"><span class="badge" [class]="statusClass(p.status)">{{ p.status }}</span></td>
+        <td class="table-td">{{ p.instructorName ?? '—' }}</td>
+        <td class="table-td">
+          <div class="flex gap-2">
+            <button type="button" class="btn-edit" (click)="openEdit(p)">Modifier</button>
+            <button type="button" class="btn-danger" (click)="delete(p)">Supprimer</button>
+          </div>
+        </td>
+      </tr>
+      <tr *ngIf="planning.length === 0">
+        <td colspan="6" class="table-td text-center py-10">Aucune séance planifiée.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal -->
+<div *ngIf="showModal" class="ent-modal-backdrop" (click)="showModal=false">
+  <div class="ent-modal" (click)="$event.stopPropagation()">
+    <div class="ent-modal-header">
+      <span class="ent-modal-title">{{ isEdit ? 'Modifier séance' : 'Nouvelle séance' }}</span>
+      <button type="button" class="ent-modal-close" (click)="showModal=false">✕</button>
+    </div>
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="ent-modal-body space-y-4">
+        <div>
+          <label class="form-label" for="studentId">Étudiant *</label>
+          <select id="studentId" formControlName="studentId" class="select-field" title="Étudiant">
+            <option [value]="0" disabled>Choisir un étudiant</option>
+            <option *ngFor="let s of students" [value]="s.id">{{ s.firstName }} {{ s.lastName }}</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div>
+            <label class="form-label" for="scheduledAt">Date et heure *</label>
+            <input id="scheduledAt" formControlName="scheduledAt" type="datetime-local"
+                   class="input-field" title="Date et heure" />
+          </div>
+          <div>
+            <label class="form-label" for="type">Type</label>
+            <select id="type" formControlName="type" class="select-field" title="Type de séance">
+              <option value="CONDUITE">CONDUITE</option>
+              <option value="CODE">CODE</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="form-label" for="status">Statut</label>
+          <select id="status" formControlName="status" class="select-field" title="Statut de la séance">
+            <option value="SCHEDULED">SCHEDULED</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="CANCELLED">CANCELLED</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label" for="notes">Notes</label>
+          <input id="notes" formControlName="notes" class="input-field" placeholder="Optionnel" title="Notes" />
+        </div>
+        <div *ngIf="error" class="error-box">{{ error }}</div>
+      </div>
+      <div class="ent-modal-footer">
+        <button type="button" class="btn-secondary" (click)="showModal=false">Annuler</button>
+        <button type="submit" class="btn-primary" [disabled]="form.invalid">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>

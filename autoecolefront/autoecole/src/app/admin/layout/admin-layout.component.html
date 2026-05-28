@@ -1,0 +1,32 @@
+<!-- Shell bar -->
+<header class="ent-shell">
+  <div class="ent-shell-brand">
+    <div class="ent-shell-logo">AE</div>
+    <span class="ent-shell-title">Auto École <span class="ent-shell-module">· Administration</span></span>
+  </div>
+  <div class="ent-shell-actions">
+    <span class="ent-shell-user">{{ fullName }} · Administrateur</span>
+    <div class="ent-shell-sep"></div>
+    <button type="button" class="ent-shell-btn" (click)="logout()">Déconnexion</button>
+  </div>
+</header>
+
+<!-- Side navigation -->
+<nav class="ent-nav">
+  <div class="ent-nav-section">Administration</div>
+  <a routerLink="dashboard" routerLinkActive="ent-nav-item--active" class="ent-nav-item">Tableau de bord</a>
+  <a routerLink="students"  routerLinkActive="ent-nav-item--active" class="ent-nav-item">Étudiants</a>
+  <a routerLink="users"     routerLinkActive="ent-nav-item--active" class="ent-nav-item">Utilisateurs</a>
+  <hr class="ent-nav-divider">
+  <div class="ent-nav-section">Gestion opérationnelle</div>
+  <a routerLink="planning"  routerLinkActive="ent-nav-item--active" class="ent-nav-item">Planning</a>
+  <a routerLink="progress"  routerLinkActive="ent-nav-item--active" class="ent-nav-item">Suivi progression</a>
+  <a routerLink="payments"  routerLinkActive="ent-nav-item--active" class="ent-nav-item">Paiements</a>
+</nav>
+
+<!-- Main content -->
+<main class="ent-content">
+  <div class="ent-page">
+    <router-outlet />
+  </div>
+</main>

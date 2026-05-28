@@ -1,0 +1,1172 @@
+================================================================================
+  AUTO ECOLE UIT — COMPLETE PROJECT EXPLANATION
+  Full-Stack Driving School Management System
+  Backend: Spring Boot 4 | Frontend: Angular 19
+================================================================================
+
+================================================================================
+  TABLE OF CONTENTS
+================================================================================
+  1. Project Overview
+  2. Architecture & Technology Stack
+  3. BACKEND — Dependencies & Why Each Was Chosen
+  4. BACKEND — Package & File Structure
+  5. BACKEND — Security System (JWT + Spring Security)
+  6. BACKEND — Database & Entities
+  7. BACKEND — DTOs (Data Transfer Objects) — Java Records
+  8. BACKEND — Repository Layer
+  9. BACKEND — Service Layer
+  10. BACKEND — Controller Layer (REST API)
+  11. BACKEND — Core Logic Explained
+  12. FRONTEND — Dependencies & Why Each Was Chosen
+  13. FRONTEND — File & Folder Structure
+  14. FRONTEND — Angular Concepts Used
+  15. FRONTEND — Authentication Flow
+  16. FRONTEND — Services (HTTP Calls)
+  17. FRONTEND — Guards (Route Protection)
+  18. FRONTEND — Components Explained
+  19. FRONTEND — Charts (Chart.js)
+  20. FRONTEND — CSS Design System
+  21. API Reference (All Endpoints)
+  22. Database Schema
+  23. How to Run the Project
+  24. Test Credentials
+  25. Key Design Decisions (For Professor Questions)
+
+================================================================================
+  1. PROJECT OVERVIEW
+================================================================================
+
+This is a web-based management system for a driving school (Auto École).
+It allows two types of users to manage the school's operations:
+
+  ADMIN  — Full access to everything: students, users, planning, payments,
+            progress tracking, and analytics dashboards.
+
+  STAFF  — Operational access: view/manage students, schedule sessions,
+            track progress, and record payments. No user management.
+
+The system is split into two completely separate projects:
+  - Backend  : Spring Boot REST API (serves JSON, no HTML)
+  - Frontend : Angular Single-Page Application (consumes the API)
+
+They communicate over HTTP on localhost (backend on port 8080, frontend on 4200).
+
+================================================================================
+  2. ARCHITECTURE & TECHNOLOGY STACK
+================================================================================
+
+PATTERN: Three-Tier Architecture
+  ┌─────────────────────────────────────┐
+  │   FRONTEND (Angular 19)             │   Port 4200
+  │   Browser SPA — renders UI          │
+  └──────────────┬──────────────────────┘
+                 │ HTTP REST calls with JWT Bearer token
+  ┌──────────────▼──────────────────────┐
+  │   BACKEND (Spring Boot 4)           │   Port 8080
+  │   REST API — business logic         │
+  └──────────────┬──────────────────────┘
+                 │ JPA / JDBC
+  ┌──────────────▼──────────────────────┐
+  │   DATABASE (PostgreSQL)             │   Port 5432
+  │   Relational data storage           │
+  └─────────────────────────────────────┘
+
+SECURITY PATTERN: Stateless JWT Authentication
+  - No sessions / no cookies
+  - Every request carries a signed JWT token in the Authorization header
+  - Backend validates the token on every request via a filter
+
+================================================================================
+  3. BACKEND — DEPENDENCIES & WHY EACH WAS CHOSEN
+================================================================================
+
+File: autoecole/pom.xml
+
+--- spring-boot-starter-webmvc ---
+  WHAT: Provides the web layer — HTTP server (embedded Tomcat), @RestController,
+        @RequestMapping, ResponseEntity, etc.
+  WHY : This is the standard way to build REST APIs in Spring Boot. "webmvc"
+        uses the traditional Servlet model (synchronous/blocking), which is
+        simpler than reactive (WebFlux) and appropriate for this project.
+
+--- spring-boot-starter-data-jpa ---
+  WHAT: Provides JPA (Java Persistence API) via Hibernate ORM, plus Spring Data
+        repositories (JpaRepository, derived query methods).
+  WHY : Instead of writing raw SQL, we define entity classes and Spring
+        automatically generates the SQL. Repository methods like
+        `countByStatus("ACTIVE")` are derived from the method name.
+
+--- postgresql (runtime scope) ---
+  WHAT: The JDBC driver for PostgreSQL database.
+  WHY : Runtime-only because it's only needed when the app actually runs,
+        not for compilation. PostgreSQL is a production-grade open-source
+        relational database.
+
+--- spring-boot-starter-security ---
+  WHAT: Spring Security framework — handles authentication, authorization,
+        CORS, CSRF, filter chains.
+  WHY : Industry standard for securing Spring applications. Provides the
+        SecurityFilterChain, PasswordEncoder, and the infrastructure to
+        plug in JWT validation.
+
+--- jjwt-api + jjwt-impl + jjwt-jackson (version 0.12.6) ---
+  WHAT: JJWT (Java JWT) library for creating and validating JSON Web Tokens.
+        - jjwt-api    : compile-time dependency (the interfaces)
+        - jjwt-impl   : runtime implementation (runtime scope)
+        - jjwt-jackson : JSON serialization support for JWT claims (runtime scope)
+  WHY : JWTs are the standard for stateless authentication in REST APIs.
+        The token contains the user's email and role, is signed with HMAC-SHA256,
+        and cannot be tampered with without knowing the secret key.
+
+--- spring-boot-starter-webmvc-test (test scope) ---
+  WHAT: Testing utilities for Spring MVC (MockMvc, @WebMvcTest, etc.)
+  WHY : Allows testing controllers without starting a real server.
+
+Java version: 21 (LTS — Long Term Support, modern features including records)
+Spring Boot version: 4.0.6
+
+================================================================================
+  4. BACKEND — PACKAGE & FILE STRUCTURE
+================================================================================
+
+src/main/java/com/javauit/autoecole/
+│
+├── AutoecoleApplication.java         ← Entry point (@SpringBootApplication)
+├── DataInitializer.java              ← Creates default admin/staff on first run
+├── WebConfig.java                    ← CORS configuration (additional)
+│
+├── entity/                           ← JPA Entity classes (database tables)
+│   ├── User.java                     ← System users (admin/staff)
+│   ├── Student.java                  ← Driving school students
+│   ├── Planning.java                 ← Scheduled driving/theory sessions
+│   ├── Progress.java                 ← Student progress tracking
+│   └── Payment.java                  ← Payment records
+│
+├── dto/                              ← Data Transfer Objects (Java records)
+│   ├── LoginRequest.java             ← { email, password }
+│   ├── LoginResponse.java            ← { token, role, fullName }
+│   ├── StudentRequest.java           ← Input for create/update student
+│   ├── StudentResponse.java          ← Output for student data
+│   ├── UserRequest.java              ← Input for create/update user
+│   ├── UserResponse.java             ← Output for user data
+│   ├── PlanningRequest.java          ← Input for create/update session
+│   ├── PlanningResponse.java         ← Output for session data
+│   ├── ProgressRequest.java          ← Input for progress update
+│   ├── ProgressResponse.java         ← Output for progress data
+│   ├── PaymentRequest.java           ← Input for create/update payment
+│   ├── PaymentResponse.java          ← Output for payment data
+│   ├── DashboardResponse.java        ← Admin dashboard stats (record)
+│   └── StaffDashboardResponse.java   ← Staff dashboard stats (record)
+│
+├── repository/                       ← Spring Data JPA interfaces
+│   ├── UserRepository.java
+│   ├── StudentRepository.java
+│   ├── PlanningRepository.java
+│   ├── ProgressRepository.java
+│   └── PaymentRepository.java
+│
+├── service/                          ← Business logic layer
+│   ├── AuthService.java
+│   ├── StudentService.java
+│   ├── UserManagementService.java
+│   ├── PlanningService.java
+│   ├── ProgressService.java
+│   ├── PaymentService.java
+│   ├── DashboardService.java
+│   └── StaffDashboardService.java
+│
+├── controller/                       ← REST API layer
+│   ├── AuthController.java           ← POST /api/auth/login
+│   ├── StudentController.java        ← /api/admin/students
+│   ├── UserManagementController.java ← /api/admin/users
+│   ├── DashboardController.java      ← /api/admin/dashboard
+│   ├── PlanningController.java       ← /api/staff/planning
+│   ├── ProgressController.java       ← /api/staff/progress
+│   ├── PaymentController.java        ← /api/staff/payments
+│   ├── StaffStudentController.java   ← /api/staff/students
+│   └── StaffDashboardController.java ← /api/staff/dashboard
+│
+├── security/                         ← JWT + Spring Security classes
+│   ├── JwtUtil.java                  ← Token generation and validation
+│   ├── JwtFilter.java                ← Per-request token extraction filter
+│   └── SecurityConfig.java           ← Security rules & CORS configuration
+│
+└── exception/
+    └── GlobalExceptionHandler.java   ← Centralized error handling
+
+================================================================================
+  5. BACKEND — SECURITY SYSTEM (JWT + SPRING SECURITY)
+================================================================================
+
+HOW JWT AUTHENTICATION WORKS — Step by Step:
+
+STEP 1 — LOGIN:
+  - User sends POST /api/auth/login with { email, password }
+  - AuthService loads the user from DB, verifies password with BCrypt
+  - If valid → JwtUtil generates a signed token containing:
+      · subject   = user's email
+      · claim     = role ("ADMIN" or "STAFF")
+      · issuedAt  = now
+      · expiration = now + 86400000ms (24 hours)
+      · signature  = HMAC-SHA256 using secret key
+  - Token is returned to the frontend in LoginResponse
+
+STEP 2 — EVERY SUBSEQUENT REQUEST:
+  - Frontend attaches the token to every HTTP request:
+      Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+  - JwtFilter (extends OncePerRequestFilter) intercepts every request:
+      · Reads the Authorization header
+      · Strips the "Bearer " prefix
+      · Calls JwtUtil.isValid() — verifies signature & expiry
+      · Calls JwtUtil.extractEmail() and JwtUtil.extractRole()
+      · Creates a UsernamePasswordAuthenticationToken with
+        SimpleGrantedAuthority("ROLE_ADMIN") or ("ROLE_STAFF")
+      · Puts it in SecurityContextHolder — Spring now knows who this is
+
+STEP 3 — AUTHORIZATION:
+  - SecurityConfig defines access rules:
+      /api/auth/**    → permitAll()   (no token required)
+      /api/admin/**   → hasRole("ADMIN")
+      /api/staff/**   → hasAnyRole("ADMIN", "STAFF")
+  - Spring Security checks the SecurityContextHolder against these rules
+  - If unauthorized → 403 Forbidden is returned automatically
+
+PASSWORD HASHING:
+  - BCryptPasswordEncoder hashes passwords (one-way, salted, work factor 10)
+  - Raw passwords are never stored in the database
+  - encoder.matches(rawPassword, storedHash) is used to verify login
+
+CORS:
+  - Cross-Origin Resource Sharing configured to allow requests from
+    http://localhost:4200 (Angular dev server)
+  - Allowed methods: GET, POST, PUT, DELETE, OPTIONS
+  - OPTIONS preflight requests are automatically handled
+
+================================================================================
+  6. BACKEND — DATABASE & ENTITIES
+================================================================================
+
+DATABASE: PostgreSQL
+  - Connection: jdbc:postgresql://localhost:5432/autoecole_db
+  - User: postgres | Password: pfe
+  - DDL mode: "update" — Hibernate creates/updates tables automatically
+
+ENTITY: User (table: users)
+  - id (BIGINT, auto-generated primary key)
+  - full_name (VARCHAR 100)
+  - email (VARCHAR 150, UNIQUE)
+  - password_hash (TEXT — BCrypt hash)
+  - role (ENUM: ADMIN | STAFF — stored as STRING in DB)
+  - is_active (BOOLEAN, default true)
+  - created_at (TIMESTAMP)
+
+ENTITY: Student (table: students)
+  - id (BIGINT, auto-generated PK)
+  - first_name, last_name (VARCHAR 100)
+  - email (VARCHAR 150, UNIQUE)
+  - phone (VARCHAR 20)
+  - date_of_birth (DATE)
+  - address (TEXT)
+  - status (VARCHAR 15, default "ACTIVE") — ACTIVE | COMPLETED | SUSPENDED
+  - registered_at (TIMESTAMP, default now)
+  - registered_by (FK → users.id, LAZY loaded)
+
+ENTITY: Planning (table: planning)
+  - id (BIGINT, auto-generated PK)
+  - student_id (FK → students.id, LAZY loaded)
+  - instructor_id (FK → users.id, LAZY loaded)
+  - scheduled_at (TIMESTAMP)
+  - type (VARCHAR 10) — CODE | CONDUITE
+  - status (VARCHAR 15, default "SCHEDULED") — SCHEDULED | COMPLETED | CANCELLED
+  - notes (TEXT)
+  - created_at (TIMESTAMP)
+
+ENTITY: Progress (table: progress)
+  - id (BIGINT, auto-generated PK)
+  - student_id (FK → students.id)
+  - theory_score (INTEGER, 0-100)
+  - practical_score (INTEGER, 0-100)
+  - sessions_completed (INTEGER)
+  - sessions_total (INTEGER)
+  - notes (TEXT)
+  - updated_at (TIMESTAMP)
+
+ENTITY: Payment (table: payments)
+  - id (BIGINT, auto-generated PK)
+  - student_id (FK → students.id)
+  - amount (DECIMAL 10,2)
+  - paid_at (DATE, default today)
+  - method (VARCHAR 10) — CASH | CARD | TRANSFER
+  - status (VARCHAR 10, default "PAID") — PAID | PENDING | PARTIAL
+  - description (TEXT)
+  - recorded_by (FK → users.id)
+  - created_at (TIMESTAMP)
+
+JPA ANNOTATIONS:
+  @Entity           — marks class as a database table
+  @Table(name=)     — specifies table name
+  @Id               — primary key
+  @GeneratedValue   — auto-increment
+  @Column           — column configuration (nullable, length, unique)
+  @ManyToOne        — many students can be registered by one user
+  @JoinColumn       — defines the FK column name
+  @Enumerated(EnumType.STRING) — stores enum as string, not integer
+
+LAZY vs EAGER loading:
+  All @ManyToOne relationships use FetchType.LAZY — the related entity is
+  only loaded from the database when you actually access it. This prevents
+  the "N+1 query problem" and keeps queries fast.
+
+================================================================================
+  7. BACKEND — DTOs (DATA TRANSFER OBJECTS) — JAVA RECORDS
+================================================================================
+
+WHY DTOs?
+  We never expose JPA entities directly to the API. Entities have:
+  - Lazy-loaded relationships (cause serialization errors)
+  - Password hashes (security leak)
+  - Internal fields the client doesn't need
+  DTOs are simple data containers — exactly what the API sends/receives.
+
+WHY JAVA RECORDS?
+  Java 21 records are immutable data carriers. Instead of:
+    public class LoginResponse {
+      private String token;
+      private String role;
+      // constructor, getters, equals, hashCode, toString...
+    }
+  We write:
+    public record LoginResponse(String token, String role, String fullName) {}
+  The compiler generates everything automatically. Records are:
+  - Immutable (fields are final)
+  - Auto-generate constructor, getters (token(), role()), equals, hashCode, toString
+  - Perfect for DTOs that only carry data
+
+IMPORTANT — Record accessor syntax:
+  In a record, you access fields with no "get" prefix:
+    record.token()   not   record.getToken()
+  This affects how Jackson serializes them to JSON — field names map directly.
+
+KEY DTOs:
+  LoginRequest   — { String email, String password }
+  LoginResponse  — { String token, String role, String fullName }
+  StudentRequest — { String firstName, lastName, email, phone, address,
+                     String dateOfBirth, String status, Long registeredBy }
+  StudentResponse — same fields + id, registeredAt
+  DashboardResponse — record with 13 fields: counts, lists for charts
+  StaffDashboardResponse — record with 10 fields for staff charts
+
+================================================================================
+  8. BACKEND — REPOSITORY LAYER
+================================================================================
+
+Spring Data JPA repositories extend JpaRepository<Entity, IdType>.
+This gives us CRUD methods for free: save(), findById(), findAll(), delete().
+
+CUSTOM DERIVED QUERIES (method name = SQL query):
+  Spring reads the method name and generates the SQL automatically.
+
+  StudentRepository:
+    countByStatus(String status)
+    → SELECT COUNT(*) FROM students WHERE status = ?
+
+    countByRegisteredAtAfter(LocalDateTime date)
+    → SELECT COUNT(*) FROM students WHERE registered_at > ?
+
+    countByRegisteredAtBetween(LocalDateTime from, LocalDateTime to)
+    → SELECT COUNT(*) FROM students WHERE registered_at BETWEEN ? AND ?
+
+  PlanningRepository:
+    countByStatus(String status)
+    → SELECT COUNT(*) FROM planning WHERE status = ?
+
+    countByType(String type)
+    → SELECT COUNT(*) FROM planning WHERE type = ?
+
+  PaymentRepository:
+    countByStatus(String status)
+    → SELECT COUNT(*) FROM payments WHERE status = ?
+
+    countByMethod(String method)
+    → SELECT COUNT(*) FROM payments WHERE method = ?
+
+  UserRepository:
+    findByEmail(String email) → Optional<User>
+    → SELECT * FROM users WHERE email = ?
+
+HOW DERIVED QUERIES WORK:
+  Spring parses the method name:
+  countBy   → SELECT COUNT(*)
+  findBy    → SELECT *
+  Status    → WHERE status = ?
+  After     → WHERE field > ?
+  Between   → WHERE field BETWEEN ? AND ?
+  The field names must exactly match entity field names.
+
+================================================================================
+  9. BACKEND — SERVICE LAYER
+================================================================================
+
+Services contain the business logic. They sit between controllers and repos.
+
+AuthService:
+  - Loads user by email from UserRepository
+  - Verifies password: passwordEncoder.matches(raw, hash)
+  - If valid: calls JwtUtil.generateToken(email, role)
+  - Returns LoginResponse record
+
+StudentService:
+  - findAll() → returns List<StudentResponse>
+  - Maps each Student entity to a StudentResponse (DTO)
+  - save(StudentRequest) → creates Student entity, sets fields, saves
+  - update(id, StudentRequest) → loads, updates fields, saves
+  - delete(id) → studentRepository.deleteById(id)
+
+DashboardService (admin):
+  - Calls multiple repositories to gather stats
+  - Computes 6-month enrollment trend using YearMonth API:
+      for i = 5 down to 0:
+        ym = YearMonth.now().minusMonths(i)
+        from = first day of that month at midnight
+        to = last day of that month at 23:59:59
+        count students registered between from and to
+        label = month name in French (TextStyle.SHORT, Locale.FRENCH)
+  - Returns DashboardResponse record with all 13 fields
+
+StaffDashboardService:
+  - Similar but with staff-relevant stats (no user counts)
+  - Returns StaffDashboardResponse record with 10 fields
+
+================================================================================
+  10. BACKEND — CONTROLLER LAYER (REST API)
+================================================================================
+
+Controllers receive HTTP requests and return HTTP responses.
+
+ANNOTATIONS:
+  @RestController  — combines @Controller + @ResponseBody (returns JSON)
+  @RequestMapping  — base URL prefix for all methods in the class
+  @GetMapping      — handles HTTP GET
+  @PostMapping     — handles HTTP POST
+  @PutMapping      — handles HTTP PUT
+  @DeleteMapping   — handles HTTP DELETE
+  @PathVariable    — extracts {id} from URL path
+  @RequestBody     — parses JSON body into a Java object
+
+RESPONSE PATTERN:
+  All controllers return ResponseEntity<T>:
+    ResponseEntity.ok(data)          → 200 OK with data
+    ResponseEntity.noContent().build() → 204 No Content (for deletes)
+    ResponseEntity.notFound().build()  → 404 Not Found
+
+SECURITY INTEGRATION:
+  The @RequestMapping prefix determines who can access it:
+    /api/admin/** → only ADMIN
+    /api/staff/** → ADMIN or STAFF
+    /api/auth/**  → everyone
+
+  To get the currently logged-in user in a controller:
+    @RequestHeader("Authorization") String authHeader
+    String token = authHeader.substring(7); // strip "Bearer "
+    String email = jwtUtil.extractEmail(token);
+    User user = userRepository.findByEmail(email).orElseThrow();
+
+================================================================================
+  11. BACKEND — CORE LOGIC EXPLAINED
+================================================================================
+
+WHY STATELESS? (No sessions)
+  REST APIs should be stateless — every request must be self-contained.
+  The server stores no session state between requests. This makes the API
+  scalable (any server instance can handle any request) and cacheable.
+
+HOW BCrypt WORKS:
+  BCrypt is a one-way hashing function. It adds a random "salt" before
+  hashing, so the same password produces different hashes each time.
+  You cannot reverse a BCrypt hash — you can only check a plaintext
+  password against a stored hash using matches().
+
+HOW YearMonth WORKS (for charts):
+  YearMonth represents a specific year+month (e.g., "2026-01").
+  .minusMonths(i) goes back i months.
+  .atDay(1) = first day of that month.
+  .atEndOfMonth() = last day (handles different month lengths).
+  .getMonth().getDisplayName(TextStyle.SHORT, Locale.FRENCH)
+    converts month number to French short name ("janv.", "févr.", etc.)
+
+GLOBAL EXCEPTION HANDLER:
+  @RestControllerAdvice intercepts exceptions thrown anywhere in the app.
+  Returns structured JSON error responses instead of Spring's default HTML.
+
+================================================================================
+  12. FRONTEND — DEPENDENCIES & WHY EACH WERE CHOSEN
+================================================================================
+
+File: autoecolefront/autoecole/package.json
+
+--- @angular/core, @angular/common, etc. (v19.2.0) ---
+  WHAT: Angular framework itself. Core provides decorators (@Component,
+        @Injectable), change detection, dependency injection.
+  WHY : Angular is a complete framework (routing, forms, HTTP, DI, SSR).
+        It enforces a consistent structure across the whole project.
+
+--- @angular/router ---
+  WHAT: Client-side routing — maps URL paths to Angular components.
+  WHY : Enables single-page application navigation without page reloads.
+        Provides Guards for protecting routes, lazy loading for performance.
+
+--- @angular/forms ---
+  WHAT: Provides ReactiveFormsModule (FormGroup, FormControl, Validators).
+  WHY : Reactive forms are used throughout. They keep form state in the
+        TypeScript component (not the template), making validation and
+        error handling explicit and testable.
+
+--- @angular/platform-server + @angular/ssr ---
+  WHAT: Server-Side Rendering — renders Angular on Node.js at request time.
+  WHY : Angular 19 includes SSR by default. Important for initial page load
+        performance and SEO. Requires isPlatformBrowser() guards for any
+        browser-only code (like Chart.js canvas operations).
+
+--- rxjs (~7.8.0) ---
+  WHAT: Reactive Extensions for JavaScript — Observable-based async library.
+  WHY : Angular's HttpClient returns Observables. Used for: HTTP calls,
+        event streams, and managing async data flows with operators like
+        map(), catchError(), switchMap().
+        subscribe() is how you consume the async result.
+
+--- chart.js (^4.5.1) ---
+  WHAT: JavaScript charting library — creates canvas-based charts.
+  WHY : Provides doughnut, bar, line, and other chart types with no
+        extra Angular wrapper needed. Used directly with @ViewChild to
+        get a reference to the <canvas> DOM element.
+
+--- express (^4.18.2) ---
+  WHAT: Node.js web server framework.
+  WHY : Used by @angular/ssr to serve the Angular app server-side.
+        The server.ts file creates an Express app that handles SSR.
+
+--- zone.js ---
+  WHAT: Patches JavaScript's async operations to notify Angular when
+        change detection should run.
+  WHY : Angular's default change detection relies on Zone.js to know
+        when async operations (HTTP calls, setTimeout, events) complete.
+
+--- typescript (~5.7.2) ---
+  WHAT: TypeScript compiler — adds static typing to JavaScript.
+  WHY : Angular is written in TypeScript. Types catch bugs at compile time.
+        Interfaces, generics, and strict null checks are used throughout.
+
+================================================================================
+  13. FRONTEND — FILE & FOLDER STRUCTURE
+================================================================================
+
+src/
+├── main.ts                           ← App bootstrap (bootstrapApplication)
+├── styles.css                        ← Global CSS design system (ALL styles)
+│
+└── app/
+    ├── app.routes.ts                 ← All route definitions (lazy-loaded)
+    ├── app.config.ts                 ← App-level providers (HttpClient, Router)
+    │
+    ├── auth/
+    │   └── login/
+    │       ├── login.component.ts    ← Login form logic
+    │       └── login.component.html ← Login form template
+    │
+    ├── admin/
+    │   ├── layout/
+    │   │   ├── admin-layout.component.ts   ← Shell wrapper component
+    │   │   └── admin-layout.component.html ← Header + nav + router-outlet
+    │   ├── dashboard/
+    │   │   ├── dashboard.component.ts      ← Admin dashboard (3 Chart.js charts)
+    │   │   ├── dashboard.component.html
+    │   │   └── dashboard.component.css
+    │   ├── students/
+    │   │   ├── students.component.ts       ← CRUD for students (admin)
+    │   │   └── students.component.html
+    │   └── users/
+    │       ├── users.component.ts          ← CRUD for system users
+    │       └── users.component.html
+    │
+    ├── staff/
+    │   ├── layout/
+    │   │   ├── staff-layout.component.ts
+    │   │   └── staff-layout.component.html ← Header + nav + router-outlet
+    │   ├── dashboard/
+    │   │   ├── staff-dashboard.component.ts   ← Staff dashboard (3 charts)
+    │   │   ├── staff-dashboard.component.html
+    │   │   └── staff-dashboard.component.css
+    │   ├── students/
+    │   │   ├── staff-students.component.ts    ← View/edit students (staff)
+    │   │   └── staff-students.component.html
+    │   ├── planning/
+    │   │   ├── planning.component.ts          ← Schedule sessions
+    │   │   └── planning.component.html
+    │   ├── progress/
+    │   │   ├── progress.component.ts          ← Track student progress
+    │   │   └── progress.component.html
+    │   └── payments/
+    │       ├── payments.component.ts          ← Record/manage payments
+    │       └── payments.component.html
+    │
+    └── core/
+        ├── services/
+        │   ├── auth.service.ts        ← Login, token storage, logout
+        │   ├── admin.service.ts       ← Admin API calls (students, users, dashboard)
+        │   └── staff.service.ts       ← Staff API calls (planning, progress, payments)
+        ├── guards/
+        │   └── auth.guard.ts          ← adminGuard and staffGuard functions
+        └── interceptors/
+            └── auth.interceptor.ts    ← Adds JWT token to every HTTP request
+
+================================================================================
+  14. FRONTEND — ANGULAR CONCEPTS USED
+================================================================================
+
+STANDALONE COMPONENTS (Angular 14+, standard in Angular 19):
+  Each component is self-contained — it declares its own imports.
+  No NgModules needed. Example:
+    @Component({
+      selector: 'app-login',
+      standalone: true,
+      imports: [ReactiveFormsModule, NgIf, NgFor],  ← explicit imports
+      templateUrl: './login.component.html'
+    })
+  The imports array replaces what used to go in @NgModule imports.
+
+LAZY LOADING:
+  Routes use loadComponent() with dynamic import() to only load a component's
+  JavaScript when that route is first visited:
+    { path: 'dashboard', loadComponent: () =>
+        import('./admin/dashboard/dashboard.component')
+        .then(m => m.DashboardComponent) }
+  This keeps the initial bundle small and app loads faster.
+
+DEPENDENCY INJECTION:
+  Angular's DI system provides service instances automatically.
+  Two styles are used:
+    private svc = inject(AuthService);    ← modern inject() function
+    constructor(private svc: AuthService) ← traditional constructor injection
+  Both work identically. The inject() style is preferred in Angular 19.
+
+REACTIVE FORMS:
+  Used for ALL forms in the project (never template-driven forms).
+    this.form = new FormGroup({
+      email:    new FormControl('', [Validators.required, Validators.email]),
+      password: new FormControl('', Validators.required)
+    });
+  In template: [formGroup]="form", formControlName="email"
+  Validation: form.get('email')?.invalid && form.get('email')?.touched
+
+OBSERVABLES + subscribe():
+  HttpClient returns Observable<T>. To get the data:
+    this.svc.getStudents().subscribe(data => {
+      this.students = data;
+    });
+  Observables are lazy — they don't execute until subscribed.
+
+*ngIf / *ngFor (structural directives):
+  *ngIf="condition"   → conditionally renders element
+  *ngFor="let item of list"  → repeats element for each item in array
+  These must be imported: imports: [NgIf, NgFor]
+
+TWO-WAY BINDING:
+  [(ngModel)] is used for simple select dropdowns (requires FormsModule).
+  Most form state is managed by ReactiveFormsModule FormGroup.
+
+routerLink / routerLinkActive:
+  routerLink="dashboard"       → navigate to sibling route on click
+  routerLinkActive="css-class" → adds class when that route is active (for nav highlighting)
+
+@ViewChild:
+  Gets a reference to a DOM element or child component from TypeScript.
+  Used for Chart.js canvas elements:
+    @ViewChild('chartSessions') chartSessionsRef!: ElementRef<HTMLCanvasElement>;
+  The ! (definite assignment assertion) tells TypeScript "this will be set before use".
+
+OnInit / OnDestroy lifecycle hooks:
+  ngOnInit()    → called after component is initialized (load data here)
+  ngOnDestroy() → called before component is removed (cleanup here, destroy charts)
+
+isPlatformBrowser():
+  Angular 19 supports SSR (server-side rendering in Node.js).
+  Browser APIs (window, document, canvas) don't exist on Node.js.
+  Guard: if (isPlatformBrowser(this.platformId)) { /* browser-only code */ }
+  Injected via: private platformId = inject(PLATFORM_ID);
+
+================================================================================
+  15. FRONTEND — AUTHENTICATION FLOW
+================================================================================
+
+1. User visits / → redirects to /login
+2. User submits login form
+3. LoginComponent calls AuthService.login({ email, password })
+4. AuthService sends POST to http://localhost:8080/api/auth/login
+5. Backend returns { token, role, fullName }
+6. AuthService stores token in localStorage:
+     localStorage.setItem('token', response.token)
+     localStorage.setItem('role', response.role)
+     localStorage.setItem('fullName', response.fullName)
+7. AuthService navigates based on role:
+     ADMIN → /admin/dashboard
+     STAFF → /staff/dashboard
+8. On subsequent navigation, guards check role:
+     adminGuard → reads localStorage role, allows ADMIN only
+     staffGuard → reads localStorage role, allows ADMIN or STAFF
+9. HttpInterceptor attaches token to every request:
+     Authorization: Bearer <token>
+10. Logout: clears localStorage, navigates back to /login
+
+================================================================================
+  16. FRONTEND — SERVICES (HTTP CALLS)
+================================================================================
+
+PATTERN: All HTTP calls are in service classes in core/services/.
+Components never call HttpClient directly.
+
+AuthService:
+  - login(req): POST /api/auth/login
+  - logout(): clears localStorage, navigates to /login
+  - getToken(): reads localStorage.getItem('token')
+  - getRole(): reads localStorage.getItem('role')
+  - getFullName(): reads localStorage.getItem('fullName')
+  - isLoggedIn(): checks if token exists
+
+AdminService (base URL: http://localhost:8080/api/admin):
+  - getDashboard(): GET /api/admin/dashboard → DashboardStats
+  - getStudents(): GET /api/admin/students → StudentResponse[]
+  - createStudent(req): POST /api/admin/students
+  - updateStudent(id, req): PUT /api/admin/students/{id}
+  - deleteStudent(id): DELETE /api/admin/students/{id}
+  - getUsers(): GET /api/admin/users → UserResponse[]
+  - createUser(req): POST /api/admin/users
+  - toggleUser(id): PUT /api/admin/users/{id}/toggle
+
+StaffService (base URL: http://localhost:8080/api/staff):
+  - getStaffDashboard(): GET /api/staff/dashboard → StaffDashboardStats
+  - getStudents(): GET /api/staff/students
+  - getPlanning(): GET /api/staff/planning → PlanningResponse[]
+  - createPlanning(req): POST /api/staff/planning
+  - updatePlanning(id, req): PUT /api/staff/planning/{id}
+  - deletePlanning(id): DELETE /api/staff/planning/{id}
+  - getProgress(): GET /api/staff/progress → ProgressResponse[]
+  - updateProgress(id, req): PUT /api/staff/progress/{id}
+  - getPayments(): GET /api/staff/payments → PaymentResponse[]
+  - createPayment(req): POST /api/staff/payments
+  - updatePayment(id, req): PUT /api/staff/payments/{id}
+  - deletePayment(id): DELETE /api/staff/payments/{id}
+
+TYPESCRIPT INTERFACES:
+  Each service defines interfaces that match the backend DTO structure:
+    export interface StudentResponse {
+      id: number;
+      firstName: string;
+      lastName: string;
+      email: string;
+      status: string;
+      registeredAt: string;
+    }
+  These give compile-time type safety for API responses.
+
+HTTP INTERCEPTOR (auth.interceptor.ts):
+  Intercepts every outgoing HTTP request and adds the token:
+    const token = this.authService.getToken();
+    if (token) {
+      req = req.clone({
+        setHeaders: { Authorization: `Bearer ${token}` }
+      });
+    }
+  "clone" is needed because HttpRequest objects are immutable.
+  Registered in app.config.ts:
+    provideHttpClient(withInterceptors([authInterceptor]))
+
+================================================================================
+  17. FRONTEND — GUARDS (ROUTE PROTECTION)
+================================================================================
+
+File: core/guards/auth.guard.ts
+
+Guards are functions that return true (allow navigation) or false / UrlTree
+(block navigation, possibly redirect).
+
+  export const adminGuard: CanActivateFn = () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+    if (auth.getRole() === 'ADMIN') return true;
+    return router.createUrlTree(['/login']);
+  };
+
+  export const staffGuard: CanActivateFn = () => {
+    const role = inject(AuthService).getRole();
+    const router = inject(Router);
+    if (role === 'ADMIN' || role === 'STAFF') return true;
+    return router.createUrlTree(['/login']);
+  };
+
+HOW THEY'RE USED in app.routes.ts:
+  { path: 'admin', canActivate: [adminGuard], ... }
+  { path: 'staff', canActivate: [staffGuard], ... }
+
+Angular calls the guard function before rendering the route's component.
+If the guard returns false or a UrlTree, the component never loads.
+
+================================================================================
+  18. FRONTEND — COMPONENTS EXPLAINED
+================================================================================
+
+LoginComponent:
+  - Reactive form with email + password fields
+  - Calls AuthService.login(), navigates on success
+  - Shows error message if login fails
+
+AdminLayoutComponent / StaffLayoutComponent:
+  - Shell components — they contain the page structure
+  - Header bar (top) with logo, user name, logout button
+  - Side navigation bar with routerLink items
+  - <router-outlet> where child components are rendered
+  - They are not destroyed when navigating between child routes
+
+DashboardComponent (admin):
+  - Loads stats from AdminService.getDashboard()
+  - After data arrives, uses setTimeout(0) to let Angular re-render the
+    *ngIf="stats" block (making canvas elements appear in DOM)
+  - Creates 3 Chart.js charts via @ViewChild canvas references:
+      1. Doughnut: student status breakdown (Active/Completed/Suspended)
+      2. Bar: monthly enrollments (last 6 months)
+      3. Horizontal Bar: planning sessions by status
+
+StaffDashboardComponent:
+  - Same pattern but calls StaffService.getStaffDashboard()
+  - 4 KPI stat cards + 3 charts:
+      1. Doughnut: session status (Scheduled/Completed/Cancelled)
+      2. Bar: payment status (Paid/Pending/Partial)
+      3. Doughnut: session type (Code/Conduite)
+
+StudentsComponent (admin):
+  - Displays full student list in a table
+  - Create/Edit modal with ReactiveForm
+  - Delete with confirmation
+  - Status badge with color coding
+
+PlanningComponent:
+  - Lists all sessions with student name, date, type, status
+  - Create/Edit modal: select student, date, time, type, instructor
+  - Status can be changed (SCHEDULED → COMPLETED / CANCELLED)
+
+ProgressComponent:
+  - Shows each student's progress bars (theory %, practical %, sessions)
+  - Edit modal to update scores and session counts
+
+PaymentsComponent:
+  - Lists all payments with amounts, method, status
+  - Create/Edit modal
+  - Color-coded status badges (PAID=green, PENDING=amber, PARTIAL=orange)
+
+================================================================================
+  19. FRONTEND — CHARTS (CHART.JS)
+================================================================================
+
+Library: chart.js v4.5.1 (no Angular wrapper — used directly)
+
+SETUP:
+  import { Chart, registerables } from 'chart.js';
+  Chart.register(...registerables);  // registers all chart types globally
+
+THE PROBLEM WITH SSR + CANVAS:
+  Angular 19 renders components on Node.js (server-side) as well as in the
+  browser. Canvas operations only work in the browser. Solution:
+    if (isPlatformBrowser(this.platformId)) {
+      setTimeout(() => this.renderCharts(), 0);
+    }
+  The setTimeout(0) ensures Angular has finished re-rendering the *ngIf block
+  (which shows canvases only when data is loaded) before we try to use them.
+
+VIEWCHILD FOR CANVAS ACCESS:
+  Template: <canvas #chartSessions></canvas>
+  TS: @ViewChild('chartSessions') chartSessionsRef!: ElementRef<HTMLCanvasElement>;
+  Usage: new Chart(this.chartSessionsRef.nativeElement, config)
+
+CHART TYPES USED:
+  'doughnut' — circular chart with hole (cutout: '65%')
+  'bar'       — vertical bar chart
+  'bar' with indexAxis: 'y' — horizontal bar chart
+
+CLEANUP:
+  Charts must be destroyed when the component is destroyed, otherwise
+  Chart.js throws "Canvas already in use" errors on re-navigation:
+    ngOnDestroy(): void {
+      this.charts.forEach(c => c.destroy());
+    }
+
+CHART CONFIGURATION STRUCTURE:
+  new Chart(canvasElement, {
+    type: 'doughnut',
+    data: {
+      labels: ['Label1', 'Label2'],
+      datasets: [{
+        data: [value1, value2],
+        backgroundColor: ['#color1', '#color2'],
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      cutout: '65%',
+      plugins: {
+        legend: { labels: { font: { size: 11 } } },
+        tooltip: { backgroundColor: '#354A5E' }
+      }
+    }
+  })
+
+================================================================================
+  20. FRONTEND — CSS DESIGN SYSTEM
+================================================================================
+
+File: src/styles.css — ONE global CSS file, no framework.
+
+DESIGN INSPIRATION: SAP Fiori / Enterprise UI
+
+CSS CUSTOM PROPERTIES (variables):
+  --brand:    #0057D2   (primary blue — buttons, links, active states)
+  --shell-bg: #354A5E   (dark blue-gray — top header bar)
+  --bg:       #F5F6F7   (light gray — page background)
+  --surface:  #FFFFFF   (white — card backgrounds)
+  --text:     #1C2028   (near-black — primary text)
+  --text-sub: #546E8A   (muted blue-gray — secondary text)
+  --border:   #DDE3EA   (light gray — card borders)
+  --nav-w:    240px     (side navigation width)
+  --shell-h:  52px      (top header height)
+
+LAYOUT SYSTEM:
+  .ent-shell  — fixed top header bar (z-index: 100)
+  .ent-nav    — fixed side navigation (left, below shell)
+  .ent-content — main area (margin-left: var(--nav-w), padding-top: var(--shell-h))
+  .ent-page   — content wrapper with padding
+
+CARD COMPONENTS:
+  .card          — white box with border and border-radius
+  .card-table    — card with no padding (table goes edge-to-edge)
+  .stat-card     — KPI metric card (4 per row in stats-grid)
+  .stat-card--green / --violet / --amber — colored accent variants
+
+GRID UTILITIES:
+  .stats-grid    — 4-column grid for KPI cards (responsive: 2→1 col)
+  .cards-grid    — 3-column grid for content cards (responsive: 2→1 col)
+  .charts-grid   — 3-column grid for chart cards (in component CSS)
+  .form-row      — 2-column grid for form fields in modals
+
+STATUS BADGES:
+  .badge — base style (border, small padding, border-radius)
+  Color classes follow pattern: bg-{color}-50 text-{color}-800 border-{color}-200
+  Colors: green (ACTIVE/PAID), amber (PENDING), orange (PARTIAL),
+          blue (SCHEDULED/CODE), red (CANCELLED/SUSPENDED), violet (COMPLETED/CONDUITE)
+
+MODAL SYSTEM:
+  .ent-modal-backdrop — full-screen overlay (position: fixed, rgba black)
+  .ent-modal          — centered white box (max-width: 560px)
+  .ent-modal--sm      — smaller modal (max-width: 400px)
+  .ent-modal-header   — title bar
+  .ent-modal-body     — scrollable content area
+  .ent-modal-footer   — button row
+
+BUTTONS:
+  .btn-primary   — blue filled button (main actions)
+  .btn-secondary — bordered button (cancel)
+  .btn-danger    — red button (delete)
+  .btn-edit      — small gray edit button (in table rows)
+  .btn-login     — full-width login button
+
+================================================================================
+  21. API REFERENCE (ALL ENDPOINTS)
+================================================================================
+
+BASE URL: http://localhost:8080
+
+--- AUTH ---
+POST   /api/auth/login
+  Body: { "email": "...", "password": "..." }
+  Returns: { "token": "...", "role": "ADMIN|STAFF", "fullName": "..." }
+
+--- ADMIN ENDPOINTS (requires ADMIN role) ---
+GET    /api/admin/dashboard          → DashboardResponse (stats + chart data)
+GET    /api/admin/students           → List<StudentResponse>
+POST   /api/admin/students           → StudentResponse (creates new student)
+PUT    /api/admin/students/{id}      → StudentResponse (updates student)
+DELETE /api/admin/students/{id}      → 204 No Content
+GET    /api/admin/users              → List<UserResponse>
+POST   /api/admin/users              → UserResponse (creates new user)
+PUT    /api/admin/users/{id}/toggle  → UserResponse (toggles is_active)
+
+--- STAFF ENDPOINTS (requires ADMIN or STAFF role) ---
+GET    /api/staff/dashboard          → StaffDashboardResponse
+GET    /api/staff/students           → List<StudentResponse> (read-only)
+GET    /api/staff/planning           → List<PlanningResponse>
+POST   /api/staff/planning           → PlanningResponse
+PUT    /api/staff/planning/{id}      → PlanningResponse
+DELETE /api/staff/planning/{id}      → 204 No Content
+GET    /api/staff/progress           → List<ProgressResponse>
+PUT    /api/staff/progress/{id}      → ProgressResponse
+GET    /api/staff/payments           → List<PaymentResponse>
+POST   /api/staff/payments           → PaymentResponse
+PUT    /api/staff/payments/{id}      → PaymentResponse
+DELETE /api/staff/payments/{id}      → 204 No Content
+
+================================================================================
+  22. DATABASE SCHEMA
+================================================================================
+
+users
+  id BIGINT PK | full_name VARCHAR(100) | email VARCHAR(150) UNIQUE
+  password_hash TEXT | role VARCHAR(10) ['ADMIN','STAFF']
+  is_active BOOLEAN | created_at TIMESTAMP
+
+students
+  id BIGINT PK | first_name VARCHAR(100) | last_name VARCHAR(100)
+  email VARCHAR(150) UNIQUE | phone VARCHAR(20) | date_of_birth DATE
+  address TEXT | status VARCHAR(15) ['ACTIVE','COMPLETED','SUSPENDED']
+  registered_at TIMESTAMP | registered_by BIGINT FK→users.id
+
+planning
+  id BIGINT PK | student_id BIGINT FK→students.id
+  instructor_id BIGINT FK→users.id | scheduled_at TIMESTAMP
+  type VARCHAR(10) ['CODE','CONDUITE']
+  status VARCHAR(15) ['SCHEDULED','COMPLETED','CANCELLED']
+  notes TEXT | created_at TIMESTAMP
+
+progress
+  id BIGINT PK | student_id BIGINT FK→students.id
+  theory_score INT | practical_score INT
+  sessions_completed INT | sessions_total INT
+  notes TEXT | updated_at TIMESTAMP
+
+payments
+  id BIGINT PK | student_id BIGINT FK→students.id
+  amount DECIMAL(10,2) | paid_at DATE
+  method VARCHAR(10) ['CASH','CARD','TRANSFER']
+  status VARCHAR(10) ['PAID','PENDING','PARTIAL']
+  description TEXT | recorded_by BIGINT FK→users.id | created_at TIMESTAMP
+
+================================================================================
+  23. HOW TO RUN THE PROJECT
+================================================================================
+
+PRE-REQUISITES:
+  - Java 21+
+  - Maven (or use included mvnw wrapper)
+  - Node.js 18+ and npm
+  - PostgreSQL running on port 5432
+
+STEP 1 — Create the PostgreSQL database:
+  CREATE DATABASE autoecole_db;
+  (user: postgres, password: pfe)
+
+STEP 2 — Start the backend:
+  cd autoecole
+  ./mvnw spring-boot:run      (Linux/Mac)
+  mvnw.cmd spring-boot:run    (Windows)
+  → Runs on http://localhost:8080
+  → Hibernate auto-creates all tables on first run
+  → DataInitializer creates admin and staff users
+
+STEP 3 — Start the frontend:
+  cd autoecolefront/autoecole
+  npm install      (first time only)
+  ng serve
+  → Runs on http://localhost:4200
+
+STEP 4 — Open browser at http://localhost:4200
+
+================================================================================
+  24. TEST CREDENTIALS
+================================================================================
+
+ADMIN ACCOUNT:
+  Email    : admin@autoecole.com
+  Password : admin123
+  Access   : Full system (all pages + user management)
+
+STAFF ACCOUNT:
+  Email    : staff@autoecole.com
+  Password : staff123
+  Access   : Dashboard, Students (view), Planning, Progress, Payments
+
+These are created automatically by DataInitializer.java on first run
+(only if the users table is empty).
+
+================================================================================
+  25. KEY DESIGN DECISIONS (FOR PROFESSOR QUESTIONS)
+================================================================================
+
+Q: Why use Java Records for DTOs?
+A: Records are immutable data carriers introduced in Java 16 (standard in 21).
+   They auto-generate constructor, accessors (field(), not getField()), equals,
+   hashCode, and toString. Perfect for DTOs that only need to carry data.
+   Avoids boilerplate. The professor specifically requested records.
+
+Q: Why separate DTOs from Entities?
+A: Entities are JPA-managed objects tied to the database. Exposing them
+   directly in the API causes: serialization of lazy-loaded proxies (LazyInit
+   errors), exposure of sensitive fields (password hashes), and tight coupling.
+   DTOs are a clean interface between layers.
+
+Q: Why JWT instead of sessions?
+A: REST APIs should be stateless. JWT carries all auth info in the token itself.
+   No server-side session storage needed. Scales horizontally (any server can
+   validate any token). The token is signed — if tampered, validation fails.
+
+Q: Why Spring Security + BCrypt?
+A: Industry standard. BCrypt is specifically designed for password hashing —
+   it's slow by design (work factor) which makes brute-force attacks expensive.
+   Never store plain-text passwords.
+
+Q: Why standalone components in Angular 19?
+A: Angular 19 uses standalone components as the default. They're simpler —
+   no need for NgModules. Each component explicitly declares what it imports.
+   Better tree-shaking (unused code is not bundled).
+
+Q: Why lazy loading routes?
+A: With lazy loading, each route's component code is only downloaded when that
+   route is first visited. This reduces initial bundle size and speeds up first
+   page load. Essential for large applications.
+
+Q: Why isPlatformBrowser() guards?
+A: Angular 19 includes SSR (server-side rendering). Some code runs in Node.js
+   on the server, where browser APIs like Canvas don't exist. Guards prevent
+   errors: if (isPlatformBrowser(this.platformId)) { /* canvas code */ }
+
+Q: Why pure CSS instead of a framework?
+A: The project uses a custom CSS design system inspired by SAP Fiori enterprise
+   UI. CSS custom properties (variables) provide consistent theming. No
+   framework dependency means no version conflicts and full control over styles.
+
+Q: How does role-based access work end-to-end?
+A: 1. Backend SecurityConfig rules: /api/admin/** = ADMIN only,
+      /api/staff/** = ADMIN or STAFF.
+   2. Angular Guards: adminGuard allows only ADMIN to reach /admin routes,
+      staffGuard allows ADMIN or STAFF for /staff routes.
+   3. Even if a user bypasses the frontend guard, the backend will reject
+      the API call with 403 Forbidden. Defense in depth.
+
+Q: What is the relationship between Admin and Staff access?
+A: Admin has full access to everything. The /api/staff/** endpoints are
+   accessible to both roles. In the Angular frontend, the admin layout also
+   includes links to planning, progress, and payments pages (which reuse the
+   same staff components). Admin simply has more routes available.
+
+Q: Why use @ViewChild for Chart.js instead of a library?
+A: chart.js is used directly to avoid adding extra dependencies (@types/chart.js,
+   ng2-charts wrapper). @ViewChild gives direct access to the native canvas
+   DOM element (nativeElement) which Chart.js requires. Simpler and more
+   transparent than using a wrapper.
+
+Q: What is the DataInitializer?
+A: It implements CommandLineRunner, which Spring Boot calls after context starts.
+   It checks if the users table is empty — if so, creates one ADMIN and one
+   STAFF user with hashed passwords. This ensures the system is usable on first
+   run without manual database seeding.
+
+================================================================================
+  END OF DOCUMENT
+================================================================================

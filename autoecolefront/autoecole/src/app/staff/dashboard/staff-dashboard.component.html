@@ -1,0 +1,61 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Tableau de bord</h1>
+    <p class="page-sub">Vue d'ensemble opérationnelle</p>
+  </div>
+</div>
+
+<!-- KPI cards -->
+<div *ngIf="stats" class="stats-grid mb-6">
+  <div class="stat-card">
+    <p class="stat-label">Total Étudiants</p>
+    <p class="stat-value">{{ stats.totalStudents }}</p>
+    <p class="stat-hint">Tous statuts</p>
+  </div>
+  <div class="stat-card stat-card--green">
+    <p class="stat-label">Étudiants Actifs</p>
+    <p class="stat-value">{{ stats.activeStudents }}</p>
+    <p class="stat-hint">En formation</p>
+  </div>
+  <div class="stat-card">
+    <p class="stat-label">Séances planifiées</p>
+    <p class="stat-value">{{ stats.scheduledSessions }}</p>
+    <p class="stat-hint">À venir</p>
+  </div>
+  <div class="stat-card stat-card--green">
+    <p class="stat-label">Paiements reçus</p>
+    <p class="stat-value">{{ stats.paidPayments }}</p>
+    <p class="stat-hint">Statut PAID</p>
+  </div>
+</div>
+
+<!-- Charts -->
+<div *ngIf="stats" class="charts-grid">
+  <div class="card chart-card">
+    <h2 class="chart-title">Statut des séances</h2>
+    <p class="chart-sub">Planifiées · Complétées · Annulées</p>
+    <div class="chart-wrap chart-wrap--doughnut">
+      <canvas #chartSessions></canvas>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h2 class="chart-title">État des paiements</h2>
+    <p class="chart-sub">Payé · En attente · Partiel</p>
+    <div class="chart-wrap">
+      <canvas #chartPayments></canvas>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h2 class="chart-title">Types de séances</h2>
+    <p class="chart-sub">Code théorique vs Conduite</p>
+    <div class="chart-wrap chart-wrap--doughnut">
+      <canvas #chartTypes></canvas>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="!stats" class="card text-center py-12">
+  <p class="stat-hint">Chargement des données...</p>
+</div>

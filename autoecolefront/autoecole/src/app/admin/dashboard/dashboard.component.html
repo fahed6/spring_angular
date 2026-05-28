@@ -1,0 +1,61 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Tableau de bord</h1>
+    <p class="page-sub">Vue d'ensemble · Auto École UIT</p>
+  </div>
+</div>
+
+<!-- KPI cards -->
+<div *ngIf="stats" class="stats-grid mb-6">
+  <div class="stat-card">
+    <p class="stat-label">Total Étudiants</p>
+    <p class="stat-value">{{ stats.totalStudents }}</p>
+    <p class="stat-hint">Tous statuts confondus</p>
+  </div>
+  <div class="stat-card stat-card--green">
+    <p class="stat-label">Étudiants Actifs</p>
+    <p class="stat-value">{{ stats.activeStudents }}</p>
+    <p class="stat-hint">En cours de formation</p>
+  </div>
+  <div class="stat-card stat-card--violet">
+    <p class="stat-label">Utilisateurs Système</p>
+    <p class="stat-value">{{ stats.totalUsers }}</p>
+    <p class="stat-hint">Comptes actifs</p>
+  </div>
+  <div class="stat-card stat-card--amber">
+    <p class="stat-label">Nouveaux ce mois</p>
+    <p class="stat-value">{{ stats.newStudentsThisMonth }}</p>
+    <p class="stat-hint">Inscrits · {{ currentMonth }}</p>
+  </div>
+</div>
+
+<!-- Charts -->
+<div *ngIf="stats" class="charts-grid">
+  <div class="card chart-card">
+    <h2 class="chart-title">Répartition des étudiants</h2>
+    <p class="chart-sub">Par statut d'inscription</p>
+    <div class="chart-wrap chart-wrap--doughnut">
+      <canvas #chartStatus></canvas>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h2 class="chart-title">Inscriptions mensuelles</h2>
+    <p class="chart-sub">Nouveaux étudiants — 6 derniers mois</p>
+    <div class="chart-wrap">
+      <canvas #chartEnrollment></canvas>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h2 class="chart-title">Séances de formation</h2>
+    <p class="chart-sub">Répartition par statut</p>
+    <div class="chart-wrap">
+      <canvas #chartPayments></canvas>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="!stats" class="card text-center py-12">
+  <p class="stat-hint">Chargement des données...</p>
+</div>

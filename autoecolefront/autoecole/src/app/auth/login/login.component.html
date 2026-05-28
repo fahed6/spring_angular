@@ -1,0 +1,38 @@
+<div class="login-page">
+  <div class="login-wrap">
+
+    <div class="login-header">
+      <div class="login-logo">AE</div>
+      <h1 class="login-title">Auto École</h1>
+      <p class="login-sub">Système de gestion — UIT</p>
+    </div>
+
+    <div class="login-card">
+      <h2 class="login-card-title">Connexion</h2>
+
+      <form [formGroup]="form" (ngSubmit)="onLogin()" class="space-y-4">
+        <div>
+          <label class="form-label">Adresse e-mail</label>
+          <input formControlName="email" type="email" class="input-field"
+                 placeholder="votre@email.com" autocomplete="email" title="Email" />
+          <p *ngIf="form.get('email')?.touched && form.get('email')?.hasError('email')"
+             class="field-error">Email invalide</p>
+        </div>
+
+        <div>
+          <label class="form-label">Mot de passe</label>
+          <input formControlName="password" type="password" class="input-field"
+                 placeholder="••••••••" autocomplete="current-password" title="Mot de passe" />
+        </div>
+
+        <div *ngIf="error" class="error-box">{{ error }}</div>
+
+        <button type="submit" class="btn-primary btn-login"
+                [disabled]="form.invalid || loading">
+          {{ loading ? 'Connexion en cours…' : 'Se connecter' }}
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>

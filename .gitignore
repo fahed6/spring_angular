@@ -1,0 +1,20 @@
+# Backend — Maven build output
+autoecole/target/
+
+# Frontend — dependencies and build output
+autoecolefront/autoecole/node_modules/
+autoecolefront/autoecole/dist/
+autoecolefront/autoecole/.angular/
+
+# IDE
+.vscode/
+*.iml
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+*.env
+.env.local

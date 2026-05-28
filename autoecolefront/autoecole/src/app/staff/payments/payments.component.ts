@@ -1,0 +1,86 @@
+import { Component, inject, OnInit } from '@angular/core';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
+import { NgIf, NgFor } from '@angular/common';
+import { StaffService } from '../../core/services/staff.service';
+import { AdminService } from '../../core/services/admin.service';
+import { Payment } from '../../core/models/payment.model';
+import { Student } from '../../core/models/student.model';
+
+@Component({
+  selector: 'app-payments',
+  standalone: true,
+  imports: [ReactiveFormsModule, FormsModule, NgIf, NgFor],
+  templateUrl: './payments.component.html',
+  styleUrl: './payments.component.css'
+})
+export class PaymentsComponent implements OnInit {
+  private svc   = inject(StaffService);
+  private admin = inject(AdminService);
+  private fb    = inject(FormBuilder);
+
+  payments:          Payment[] = [];
+  students:          Student[] = [];
+  selectedStudentId: number | null = null;
+  showModal  = false;
+  isEdit     = false;
+  editId?:   number;
+  error      = '';
+
+  form = this.fb.group({
+    studentId:   [0, [Validators.required, Validators.min(1)]],
+    amount:      [0, [Validators.required, Validators.min(0)]],
+    paidAt:      [new Date().toISOString().slice(0, 10), Validators.required],
+    method:      ['CASH'],
+    status:      ['PAID'],
+    description: ['']
+  });
+
+  ngOnInit(): void {
+    this.admin.getStudents().subscribe(d => this.students = d);
+    this.load();
+  }
+
+  load(): void {
+    this.svc.getPayments(this.selectedStudentId ?? undefined).subscribe(d => this.payments = d);
+  }
+
+  openAdd(): void {
+    this.form.reset({ method: 'CASH', status: 'PAID', studentId: 0, amount: 0, paidAt: new Date().toISOString().slice(0, 10), description: '' });
+    this.isEdit = false; this.editId = undefined; this.error = ''; this.showModal = true;
+  }
+
+  openEdit(p: Payment): void {
+    this.form.patchValue(p as any);
+    this.isEdit = true; this.editId = p.id; this.error = ''; this.showModal = true;
+  }
+
+  save(): void {
+    if (this.form.invalid) return;
+    const obs = this.isEdit
+      ? this.svc.updatePayment(this.editId!, this.form.value as any)
+      : this.svc.createPayment(this.form.value as any);
+    obs.subscribe({
+      next: () => { this.showModal = false; this.load(); },
+      error: err => this.error = err.error?.error ?? 'Erreur'
+    });
+  }
+
+  delete(p: Payment): void {
+    if (!confirm('Supprimer ce paiement ?')) return;
+    this.svc.deletePayment(p.id!).subscribe(() => this.load());
+  }
+
+  statusClass(s: string): string {
+    return { PAID: 'bg-green-50 text-green-800 border-green-200', PENDING: 'bg-amber-50 text-amber-800 border-amber-200', PARTIAL: 'bg-orange-50 text-orange-800 border-orange-200' }[s] ?? 'bg-slate-50 text-slate-600 border-slate-200';
+  }
+
+  methodLabel(m: string): string {
+    return { CASH: 'Espèces', CARD: 'Carte', TRANSFER: 'Virement' }[m] ?? m;
+  }
+
+  studentName(id: number): string {
+    const s = this.students.find(x => x.id === id);
+    return s ? `${s.firstName} ${s.lastName}` : '—';
+  }
+}

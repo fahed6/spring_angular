@@ -1,0 +1,37 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Étudiants</h1>
+    <p class="page-sub">Consultation — lecture seule</p>
+  </div>
+</div>
+
+<div class="mb-4">
+  <input type="text" [(ngModel)]="search" (input)="load()" placeholder="Rechercher par nom ou email…"
+         class="input-field max-w-xs" title="Rechercher" />
+</div>
+
+<div class="card-table">
+  <table class="w-full border-collapse">
+    <thead>
+      <tr>
+        <th class="table-th">Nom complet</th>
+        <th class="table-th">Email</th>
+        <th class="table-th">Téléphone</th>
+        <th class="table-th">Statut</th>
+        <th class="table-th">Date d'inscription</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let s of students">
+        <td class="table-td font-medium">{{ s.firstName }} {{ s.lastName }}</td>
+        <td class="table-td">{{ s.email }}</td>
+        <td class="table-td">{{ s.phone }}</td>
+        <td class="table-td"><span class="badge" [class]="statusClass(s.status)">{{ s.status }}</span></td>
+        <td class="table-td">{{ (s.registeredAt ?? '').slice(0,10) }}</td>
+      </tr>
+      <tr *ngIf="students.length === 0">
+        <td colspan="5" class="table-td text-center py-10">Aucun étudiant trouvé.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

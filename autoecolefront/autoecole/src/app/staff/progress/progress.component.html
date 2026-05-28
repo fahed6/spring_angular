@@ -1,0 +1,82 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Suivi progression</h1>
+    <p class="page-sub">Heures et scores par étudiant</p>
+  </div>
+</div>
+
+<div class="mb-5">
+  <select [(ngModel)]="selectedId" (change)="onStudentChange()" class="select-field max-w-xs" title="Sélectionner un étudiant">
+    <option [value]="null">-- Sélectionner un étudiant --</option>
+    <option *ngFor="let s of students" [value]="s.id">{{ s.firstName }} {{ s.lastName }}</option>
+  </select>
+</div>
+
+<!-- Empty state -->
+<div *ngIf="selectedId && progressList.length === 0" class="card text-center py-10">
+  <p class="stat-hint mb-4">Aucun suivi enregistré pour cet étudiant.</p>
+  <div class="flex gap-3 justify-center">
+    <button type="button" class="btn-primary" (click)="openNew('CODE')">+ Ajouter CODE</button>
+    <button type="button" class="btn-primary" (click)="openNew('CONDUITE')">+ Ajouter CONDUITE</button>
+  </div>
+</div>
+
+<!-- Progress cards -->
+<div *ngIf="progressList.length > 0" class="cards-grid">
+  <div *ngFor="let p of progressList" class="card">
+    <div class="flex items-center justify-between mb-4">
+      <span class="badge" [class]="p.category === 'CODE' ? 'bg-purple-50 text-purple-800 border-purple-200' : 'bg-blue-50 text-blue-800 border-blue-200'">
+        {{ p.category }}
+      </span>
+      <button type="button" class="btn-edit" (click)="openEdit(p)">Modifier</button>
+    </div>
+    <div class="prog-row">
+      <span>Heures complétées</span>
+      <strong>{{ p.hoursCompleted }} / {{ p.hoursRequired }} h</strong>
+    </div>
+    <div class="prog-track">
+      <div class="prog-fill" [style.width]="percent(p) + '%'"></div>
+    </div>
+    <div *ngIf="p.score !== null && p.score !== undefined" class="prog-row">
+      <span>Score</span>
+      <strong>{{ p.score }} / 100</strong>
+    </div>
+    <p class="prog-meta">Mis à jour par {{ p.updatedBy ?? '—' }}</p>
+  </div>
+</div>
+
+<!-- Modal -->
+<div *ngIf="showModal" class="ent-modal-backdrop" (click)="showModal=false">
+  <div class="ent-modal ent-modal--sm" (click)="$event.stopPropagation()">
+    <div class="ent-modal-header">
+      <span class="ent-modal-title">Suivi {{ form.get('category')?.value }}</span>
+      <button type="button" class="ent-modal-close" (click)="showModal=false">✕</button>
+    </div>
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="ent-modal-body space-y-4">
+        <div class="form-row">
+          <div>
+            <label class="form-label" for="hoursCompleted">Heures complétées</label>
+            <input id="hoursCompleted" formControlName="hoursCompleted" type="number"
+                   class="input-field" min="0" step="0.5" title="Heures complétées" />
+          </div>
+          <div>
+            <label class="form-label" for="hoursRequired">Heures requises</label>
+            <input id="hoursRequired" formControlName="hoursRequired" type="number"
+                   class="input-field" min="1" step="0.5" title="Heures requises" />
+          </div>
+        </div>
+        <div>
+          <label class="form-label" for="score">Score (optionnel)</label>
+          <input id="score" formControlName="score" type="number"
+                 class="input-field" min="0" max="100" placeholder="0 – 100" title="Score" />
+        </div>
+        <div *ngIf="error" class="error-box">{{ error }}</div>
+      </div>
+      <div class="ent-modal-footer">
+        <button type="button" class="btn-secondary" (click)="showModal=false">Annuler</button>
+        <button type="submit" class="btn-primary" [disabled]="form.invalid">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>

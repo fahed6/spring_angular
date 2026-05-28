@@ -1,0 +1,98 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Étudiants</h1>
+    <p class="page-sub">Gestion des étudiants inscrits</p>
+  </div>
+  <button type="button" class="btn-primary" (click)="openAdd()">+ Nouvel étudiant</button>
+</div>
+
+<div class="mb-4">
+  <input type="text" [(ngModel)]="search" (input)="load()" placeholder="Rechercher par nom ou email…"
+         class="input-field max-w-xs" />
+</div>
+
+<div class="card-table">
+  <table class="w-full border-collapse">
+    <thead>
+      <tr>
+        <th class="table-th">Nom complet</th>
+        <th class="table-th">Email</th>
+        <th class="table-th">Téléphone</th>
+        <th class="table-th">Statut</th>
+        <th class="table-th">Date d'inscription</th>
+        <th class="table-th">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let s of students">
+        <td class="table-td font-medium">{{ s.firstName }} {{ s.lastName }}</td>
+        <td class="table-td">{{ s.email }}</td>
+        <td class="table-td">{{ s.phone }}</td>
+        <td class="table-td"><span class="badge" [class]="statusClass(s.status)">{{ s.status }}</span></td>
+        <td class="table-td">{{ (s.registeredAt ?? '').slice(0,10) }}</td>
+        <td class="table-td">
+          <div class="flex gap-2">
+            <button type="button" class="btn-edit" (click)="openEdit(s)">Modifier</button>
+            <button type="button" class="btn-danger" (click)="delete(s)">Supprimer</button>
+          </div>
+        </td>
+      </tr>
+      <tr *ngIf="students.length === 0">
+        <td colspan="6" class="table-td text-center py-10">Aucun étudiant trouvé.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal -->
+<div *ngIf="showModal" class="ent-modal-backdrop" (click)="showModal=false">
+  <div class="ent-modal" (click)="$event.stopPropagation()">
+    <div class="ent-modal-header">
+      <span class="ent-modal-title">{{ isEdit ? 'Modifier étudiant' : 'Nouvel étudiant' }}</span>
+      <button type="button" class="ent-modal-close" (click)="showModal=false">✕</button>
+    </div>
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="ent-modal-body space-y-4">
+        <div class="form-row">
+          <div>
+            <label class="form-label">Prénom *</label>
+            <input formControlName="firstName" class="input-field" placeholder="Prénom" />
+          </div>
+          <div>
+            <label class="form-label">Nom *</label>
+            <input formControlName="lastName" class="input-field" placeholder="Nom" />
+          </div>
+          <div>
+            <label class="form-label">Email *</label>
+            <input formControlName="email" type="email" class="input-field" placeholder="email@exemple.com" />
+          </div>
+          <div>
+            <label class="form-label">Téléphone</label>
+            <input formControlName="phone" class="input-field" placeholder="0555000000" />
+          </div>
+          <div>
+            <label class="form-label">Date de naissance</label>
+            <input formControlName="dateOfBirth" type="date" class="input-field" />
+          </div>
+          <div>
+            <label class="form-label">Statut</label>
+            <select formControlName="status" class="select-field" title="Statut étudiant">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Adresse</label>
+          <input formControlName="address" class="input-field" placeholder="Adresse complète" />
+        </div>
+        <div *ngIf="error" class="error-box">{{ error }}</div>
+      </div>
+      <div class="ent-modal-footer">
+        <button type="button" class="btn-secondary" (click)="showModal=false">Annuler</button>
+        <button type="submit" class="btn-primary" [disabled]="form.invalid">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
