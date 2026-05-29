@@ -2,10 +2,9 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
-import { StaffService } from '../../core/services/staff.service';
-import { AdminService } from '../../core/services/admin.service';
-import { Payment } from '../../core/models/payment.model';
-import { Student } from '../../core/models/student.model';
+import { StaffService } from '../../services/staff.service';
+import { Payment } from '../../models/payment.model';
+import { Student } from '../../models/student.model';
 
 @Component({
   selector: 'app-payments',
@@ -15,9 +14,8 @@ import { Student } from '../../core/models/student.model';
   styleUrl: './payments.component.css'
 })
 export class PaymentsComponent implements OnInit {
-  private svc   = inject(StaffService);
-  private admin = inject(AdminService);
-  private fb    = inject(FormBuilder);
+  private svc = inject(StaffService);
+  private fb  = inject(FormBuilder);
 
   payments:          Payment[] = [];
   students:          Student[] = [];
@@ -37,7 +35,7 @@ export class PaymentsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.admin.getStudents().subscribe(d => this.students = d);
+    this.svc.getStudents().subscribe(d => this.students = d);
     this.load();
   }
 

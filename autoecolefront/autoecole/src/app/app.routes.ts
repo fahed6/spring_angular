@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard, staffGuard } from './core/guards/auth.guard';
+import { adminGuard, staffGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },

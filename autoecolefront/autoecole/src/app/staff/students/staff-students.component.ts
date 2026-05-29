@@ -1,8 +1,8 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
-import { StaffService } from '../../core/services/staff.service';
-import { Student } from '../../core/models/student.model';
+import { StaffService } from '../../services/staff.service';
+import { Student } from '../../models/student.model';
 
 @Component({
   selector: 'app-staff-students',

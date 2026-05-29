@@ -5,40 +5,33 @@ import { Student } from '../models/student.model';
 import { Planning } from '../models/planning.model';
 import { Progress } from '../models/progress.model';
 import { Payment } from '../models/payment.model';
-
-export interface StaffDashboardStats {
-  totalStudents: number;
-  activeStudents: number;
-  scheduledSessions: number;
-  completedSessions: number;
-  cancelledSessions: number;
-  codeSessions: number;
-  conduiteSessions: number;
-  paidPayments: number;
-  pendingPayments: number;
-  partialPayments: number;
-}
+import { StaffDashboardStats } from '../models/dashboard.model';
 
 @Injectable({ providedIn: 'root' })
 export class StaffService {
   private http = inject(HttpClient);
 
+  // ── Dashboard ─────────────────────────────────────────────────────────────
   getStaffDashboard(): Observable<StaffDashboardStats> {
     return this.http.get<StaffDashboardStats>('/api/staff/dashboard');
   }
 
-  // Students (read-only)
+  // ── Students (lecture seule — accessible aux rôles ADMIN et STAFF) ────────
   getStudents(search?: string): Observable<Student[]> {
     let params = new HttpParams();
     if (search) params = params.set('search', search);
     return this.http.get<Student[]>('/api/staff/students', { params });
   }
 
-  // Planning
+  // ── Planning (CRUD) ───────────────────────────────────────────────────────
   getPlanning(studentId?: number): Observable<Planning[]> {
     let params = new HttpParams();
     if (studentId) params = params.set('studentId', studentId);
     return this.http.get<Planning[]>('/api/staff/planning', { params });
+  }
+
+  getOnePlanning(id: number): Observable<Planning> {
+    return this.http.get<Planning>(`/api/staff/planning/${id}`);
   }
 
   createPlanning(p: Partial<Planning>): Observable<Planning> {
@@ -53,7 +46,7 @@ export class StaffService {
     return this.http.delete<void>(`/api/staff/planning/${id}`);
   }
 
-  // Progress
+  // ── Progress (upsert) ─────────────────────────────────────────────────────
   getProgress(studentId: number): Observable<Progress[]> {
     return this.http.get<Progress[]>('/api/staff/progress', { params: { studentId } });
   }
@@ -66,7 +59,7 @@ export class StaffService {
     return this.http.delete<void>(`/api/staff/progress/${id}`);
   }
 
-  // Payments
+  // ── Payments (CRUD) ───────────────────────────────────────────────────────
   getPayments(studentId?: number): Observable<Payment[]> {
     let params = new HttpParams();
     if (studentId) params = params.set('studentId', studentId);

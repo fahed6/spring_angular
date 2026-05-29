@@ -10,8 +10,7 @@ export const adminGuard: CanActivateFn = () => {
 };
 
 export const staffGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  if (auth.isLoggedIn()) return true;
+  if (inject(AuthService).isLoggedIn()) return true;
   inject(Router).navigate(['/login']);
   return false;
 };

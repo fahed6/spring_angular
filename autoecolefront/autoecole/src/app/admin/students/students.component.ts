@@ -2,8 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
-import { AdminService } from '../../core/services/admin.service';
-import { Student } from '../../core/models/student.model';
+import { AdminService } from '../../services/admin.service';
+import { Student } from '../../models/student.model';
 
 @Component({
   selector: 'app-students',

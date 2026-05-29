@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgIf } from '@angular/common';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -31,7 +31,7 @@ export class LoginComponent {
     const { email, password } = this.form.value;
     this.auth.login(email!, password!).subscribe({
       next: () => {
-        const dest = this.auth.isAdmin() ? '/admin/dashboard' : '/staff/students';
+        const dest = this.auth.isAdmin() ? '/admin/dashboard' : '/staff/dashboard';
         this.router.navigate([dest]);
       },
       error: () => { this.error = 'Email ou mot de passe incorrect.'; this.loading = false; }

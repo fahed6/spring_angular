@@ -4,13 +4,18 @@ import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common';
 
-interface LoginResponse { token: string; role: string; fullName: string; }
+// Matches backend: LoginResponse record
+interface LoginResponse {
+  token: string;
+  role: string;
+  fullName: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private http       = inject(HttpClient);
-  private router     = inject(Router);
-  private isBrowser  = isPlatformBrowser(inject(PLATFORM_ID));
+  private http      = inject(HttpClient);
+  private router    = inject(Router);
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   login(email: string, password: string) {
     return this.http.post<LoginResponse>('/api/auth/login', { email, password }).pipe(

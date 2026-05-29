@@ -1,8 +1,8 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
-import { AdminService } from '../../core/services/admin.service';
-import { UserInfo } from '../../core/models/user.model';
+import { AdminService } from '../../services/admin.service';
+import { UserInfo } from '../../models/user.model';
 
 @Component({
   selector: 'app-users',

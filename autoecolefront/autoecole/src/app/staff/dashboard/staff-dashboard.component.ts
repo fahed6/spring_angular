@@ -2,7 +2,8 @@ import { Component, inject, OnInit, OnDestroy,
          ElementRef, ViewChild, PLATFORM_ID } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { isPlatformBrowser } from '@angular/common';
-import { StaffService, StaffDashboardStats } from '../../core/services/staff.service';
+import { StaffService } from '../../services/staff.service';
+import { StaffDashboardStats } from '../../models/dashboard.model';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);

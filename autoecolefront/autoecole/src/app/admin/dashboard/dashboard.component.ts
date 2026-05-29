@@ -2,7 +2,8 @@ import { Component, inject, OnInit, OnDestroy, AfterViewInit,
          ElementRef, ViewChild, PLATFORM_ID } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { isPlatformBrowser } from '@angular/common';
-import { AdminService, DashboardStats } from '../../core/services/admin.service';
+import { AdminService } from '../../services/admin.service';
+import { DashboardStats } from '../../models/dashboard.model';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
