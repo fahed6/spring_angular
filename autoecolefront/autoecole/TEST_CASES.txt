@@ -1,0 +1,823 @@
+================================================================================
+  AUTO ÉCOLE UIT — CAHIER DE TEST MANUEL COMPLET
+  Admin · Staff · Swagger UI / OpenAPI
+================================================================================
+  Prérequis avant de commencer
+  ─────────────────────────────
+  1. Base de données PostgreSQL démarrée (port 5432, base: autoecole_db)
+  2. Backend lancé :  cd autoecole  →  mvn spring-boot:run   (port 8080)
+  3. Frontend lancé : cd autoecolefront/autoecole  →  ng serve  (port 4200)
+  4. Navigateur ouvert sur http://localhost:4200
+
+  Comptes de test (créés automatiquement au 1er démarrage)
+  ────────────────────────────────────────────────────────
+  ADMIN  :  admin@autoecole.com  /  admin123
+  STAFF  :  staff@autoecole.com  /  staff123
+
+  Convention de résultat
+  ──────────────────────
+  [PASS] = comportement attendu obtenu
+  [FAIL] = résultat différent de l'attendu
+
+================================================================================
+  PARTIE A — SWAGGER UI / OPENAPI
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SWG-01 : Accès à la documentation Swagger UI
+────────────────────────────────────────────────────────────────────────────────
+  URL        : http://localhost:8080/swagger-ui.html
+  Méthode    : GET (navigateur)
+  Prérequis  : Backend démarré
+
+  Étapes :
+    1. Ouvrir http://localhost:8080/swagger-ui.html dans le navigateur
+
+  Résultat attendu :
+    - Page Swagger UI chargée avec titre "Auto École UIT — API"
+    - Version "1.0.0" affichée
+    - 8 groupes d'endpoints visibles :
+        · Authentification
+        · Admin — Étudiants
+        · Admin — Utilisateurs système
+        · Admin — Tableau de bord
+        · Staff — Étudiants
+        · Staff — Planning
+        · Staff — Progression
+        · Staff — Paiements
+        · Staff — Tableau de bord
+    - Bouton "Authorize" visible en haut à droite
+    - Description "API REST de gestion d'une auto-école" présente
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SWG-02 : Accès au fichier JSON OpenAPI
+────────────────────────────────────────────────────────────────────────────────
+  URL        : http://localhost:8080/api-docs
+  Méthode    : GET (navigateur ou Swagger)
+
+  Étapes :
+    1. Ouvrir http://localhost:8080/api-docs
+
+  Résultat attendu :
+    - JSON valide retourné avec structure OpenAPI 3.x
+    - Champs présents : "openapi", "info", "paths", "components"
+    - "info.title" = "Auto École UIT — API"
+    - "components.securitySchemes.bearerAuth" présent avec type "http", scheme "bearer"
+    - Tous les endpoints listés sous "paths"
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SWG-03 : Connexion via Swagger — obtenir un token JWT
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-SWG-01 réussi
+
+  Étapes :
+    1. Dans Swagger UI, dérouler "Authentification"
+    2. Cliquer sur "POST /api/auth/login"
+    3. Cliquer "Try it out"
+    4. Saisir dans le corps :
+         {
+           "email": "admin@autoecole.com",
+           "password": "admin123"
+         }
+    5. Cliquer "Execute"
+
+  Résultat attendu :
+    - Code réponse : 200
+    - Corps de la réponse :
+        {
+          "token": "<chaîne JWT longue>",
+          "role": "ADMIN",
+          "fullName": "Admin"
+        }
+    - Le token commence par "eyJ" (encodage base64 d'un JWT)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SWG-04 : Autoriser Swagger avec le token JWT (Authorize)
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-SWG-03 réussi, token copié
+
+  Étapes :
+    1. Copier la valeur du champ "token" (sans guillemets)
+    2. Cliquer le bouton "Authorize" (cadenas) en haut de la page
+    3. Dans le champ "bearerAuth (http, Bearer)", coller :
+         Bearer <token_copié>
+    4. Cliquer "Authorize" puis "Close"
+
+  Résultat attendu :
+    - Le cadenas passe à l'état "fermé" (verrouillé)
+    - Tous les endpoints sont maintenant autorisés pour l'exécution
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SWG-05 : Tester GET /api/admin/students via Swagger (après autorisation)
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-SWG-04 réussi
+
+  Étapes :
+    1. Dérouler "Admin — Étudiants"
+    2. Cliquer "GET /api/admin/students"
+    3. "Try it out" → "Execute"
+
+  Résultat attendu :
+    - Code : 200
+    - Corps : tableau JSON (vide [] ou avec étudiants si des données existent)
+    - Pas d'erreur 401 (le token est bien transmis)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SWG-06 : Tester un endpoint admin SANS token (erreur 401)
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : Swagger ouvert, PAS d'autorisation active
+
+  Étapes :
+    1. Si déjà autorisé : cliquer "Authorize" → "Logout" → "Close"
+    2. Dérouler "Admin — Étudiants"
+    3. "GET /api/admin/students" → "Try it out" → "Execute"
+
+  Résultat attendu :
+    - Code : 401 ou 403
+    - Accès refusé sans token valide
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SWG-07 : Créer un étudiant via Swagger (POST avec corps JSON)
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-SWG-04 réussi (token admin actif)
+
+  Étapes :
+    1. Dérouler "Admin — Étudiants" → "POST /api/admin/students"
+    2. "Try it out"
+    3. Saisir :
+         {
+           "firstName": "Swagger",
+           "lastName": "Test",
+           "email": "swagger.test@autoecole.com",
+           "phone": "0555000000",
+           "dateOfBirth": "2000-01-01",
+           "address": "Alger",
+           "status": "ACTIVE"
+         }
+    4. "Execute"
+
+  Résultat attendu :
+    - Code : 201 Created
+    - Corps contient l'étudiant créé avec un "id" auto-généré
+    - "status" = "ACTIVE"
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SWG-08 : Tester la validation — créer un étudiant avec prénom vide
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-SWG-04 réussi
+
+  Étapes :
+    1. "POST /api/admin/students" → "Try it out"
+    2. Saisir :
+         {
+           "firstName": "",
+           "lastName": "Test",
+           "email": "test@test.com"
+         }
+    3. "Execute"
+
+  Résultat attendu :
+    - Code : 400 Bad Request
+    - Corps :
+        {
+          "status": 400,
+          "code": "VALIDATION_ERROR",
+          "message": "Un ou plusieurs champs sont invalides",
+          "fields": {
+            "firstName": "Le prénom est obligatoire"
+          }
+        }
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SWG-09 : Tester GET avec ID inexistant — erreur 404 structurée
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-SWG-04 réussi
+
+  Étapes :
+    1. "GET /api/admin/students/{id}" → "Try it out"
+    2. Saisir id = 99999
+    3. "Execute"
+
+  Résultat attendu :
+    - Code : 404 Not Found
+    - Corps :
+        {
+          "timestamp": "...",
+          "status": 404,
+          "code": "RESOURCE_NOT_FOUND",
+          "message": "...",
+          "fields": null
+        }
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SWG-10 : Vérifier la documentation du schéma des DTOs
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Faire défiler Swagger UI jusqu'en bas → section "Schemas"
+    2. Cliquer sur "LoginRequest"
+
+  Résultat attendu :
+    - Champs "email" et "password" documentés
+    - Description de l'exemple visible (ex: "admin@autoecole.com")
+    - Contraintes affichées
+
+================================================================================
+  PARTIE B — TESTS ADMIN (Interface Angular)
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-01 : Connexion administrateur
+────────────────────────────────────────────────────────────────────────────────
+  URL  : http://localhost:4200
+
+  Étapes :
+    1. Ouvrir http://localhost:4200
+    2. Saisir : Email    = admin@autoecole.com
+                Password = admin123
+    3. Cliquer "Connexion"
+
+  Résultat attendu :
+    - Redirection vers /admin/dashboard
+    - Header affiche "Admin · Administrateur"
+    - Navigation gauche visible :
+        Administration : Tableau de bord · Étudiants · Utilisateurs
+        Gestion opérationnelle : Planning · Suivi progression · Paiements
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-02 : Tableau de bord Admin — KPIs et graphiques
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-ADM-01 réussi
+
+  Étapes :
+    1. Cliquer "Tableau de bord" dans la navigation
+
+  Résultat attendu :
+    - 4 cartes KPI affichées :
+        · Total Étudiants (nombre)
+        · Étudiants Actifs (nombre)
+        · Utilisateurs Système (nombre)
+        · Nouveaux ce mois (nombre + mois courant)
+    - 3 graphiques Chart.js affichés :
+        · Donut "Répartition des étudiants" (Actifs / Diplômés / Suspendus)
+        · Barre "Inscriptions mensuelles" (6 derniers mois)
+        · Barre horizontale "Séances de formation" (Planifiées / Complétées / Annulées)
+    - Aucun message "Chargement des données..." visible
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-03 : Gestion étudiants — Afficher la liste
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Étudiants" dans la navigation
+
+  Résultat attendu :
+    - Tableau avec colonnes : Nom · Email · Téléphone · Statut · Inscrit le · Actions
+    - Champ de recherche visible en haut
+    - Bouton "Nouvel étudiant" visible
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-04 : Gestion étudiants — Créer un étudiant
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-ADM-03
+
+  Étapes :
+    1. Cliquer "Nouvel étudiant"
+    2. Remplir le formulaire :
+         Prénom       : Yassine
+         Nom          : Gouti
+         Email        : y.gouti@test.com
+         Téléphone    : 0555111222
+         Date naissance : 2002-03-10
+         Adresse      : Constantine
+         Statut       : ACTIVE
+    3. Cliquer "Enregistrer"
+
+  Résultat attendu :
+    - Modal se ferme
+    - Étudiant "Yassine Gouti" apparaît dans la liste
+    - Badge "ACTIVE" affiché en vert
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-05 : Gestion étudiants — Recherche par nom
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-ADM-04 réussi
+
+  Étapes :
+    1. Saisir "Gouti" dans le champ de recherche
+
+  Résultat attendu :
+    - Liste filtrée — seul Yassine Gouti visible
+    - Les autres étudiants ne s'affichent pas
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-06 : Gestion étudiants — Modifier un étudiant
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer l'icône modifier (✏) sur Yassine Gouti
+    2. Changer le statut de ACTIVE → SUSPENDED
+    3. Cliquer "Enregistrer"
+
+  Résultat attendu :
+    - Modal fermé
+    - Badge de Yassine Gouti passe à "SUSPENDED" (rouge/ambre)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-07 : Gestion étudiants — Supprimer un étudiant
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Supprimer" sur l'étudiant créé pour test
+    2. Confirmer la suppression si demandé
+
+  Résultat attendu :
+    - Étudiant disparaît de la liste
+    - Liste mise à jour immédiatement
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-08 : Gestion utilisateurs — Afficher la liste
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Utilisateurs" dans la navigation
+
+  Résultat attendu :
+    - Tableau avec : Nom · Email · Rôle · Statut · Créé le · Actions
+    - Minimum 2 utilisateurs : admin@autoecole.com (ADMIN) et staff@autoecole.com (STAFF)
+    - Bouton "Nouvel utilisateur"
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-09 : Gestion utilisateurs — Créer un compte STAFF
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Nouvel utilisateur"
+    2. Remplir :
+         Nom complet  : Mohamed Instructeur
+         Email        : m.instructeur@autoecole.com
+         Mot de passe : motdepasse123
+         Rôle         : STAFF
+         Actif        : true
+    3. Cliquer "Enregistrer"
+
+  Résultat attendu :
+    - Nouveau compte STAFF visible dans la liste
+    - Statut "Actif" affiché en vert
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-10 : Gestion utilisateurs — Désactiver un compte
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-ADM-09
+
+  Étapes :
+    1. Cliquer le bouton "Désactiver" (ou toggle) sur "Mohamed Instructeur"
+
+  Résultat attendu :
+    - Statut du compte passe à "Inactif" (rouge)
+    - Le compte ne peut plus se connecter
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-11 : Admin accède au Planning (accès full système)
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Planning" dans la section "Gestion opérationnelle"
+
+  Résultat attendu :
+    - Page Planning chargée (même page que le staff)
+    - Séances visibles (ou tableau vide)
+    - Admin peut créer/modifier/supprimer des séances
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-12 : Admin accède aux Paiements
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Paiements" dans la navigation
+
+  Résultat attendu :
+    - Page Paiements chargée
+    - Tableau avec montants, méthodes, statuts
+    - Admin peut créer et modifier des paiements
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ADM-13 : Déconnexion administrateur
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Déconnexion" dans le header
+
+  Résultat attendu :
+    - Redirection vers /login
+    - Accès à /admin/dashboard impossible (redirection vers /login)
+
+================================================================================
+  PARTIE C — TESTS STAFF (Interface Angular)
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-01 : Connexion staff
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Ouvrir http://localhost:4200
+    2. Saisir : Email    = staff@autoecole.com
+                Password = staff123
+    3. Cliquer "Connexion"
+
+  Résultat attendu :
+    - Redirection vers /staff/dashboard
+    - Header affiche "Staff · STAFF" (ou rôle du compte)
+    - Navigation gauche :
+        Espace Staff : Tableau de bord · Étudiants · Planning · Suivi progression · Paiements
+    - PAS de section "Utilisateurs" (accès restreint)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-02 : Tableau de bord Staff — KPIs et graphiques
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-STF-01 réussi
+
+  Étapes :
+    1. Vérifier la page Tableau de bord (page par défaut)
+
+  Résultat attendu :
+    - 4 cartes KPI :
+        · Total Étudiants
+        · Étudiants Actifs
+        · Séances planifiées
+        · Paiements reçus
+    - 3 graphiques :
+        · Donut "Statut des séances" (Planifiées / Complétées / Annulées)
+        · Barre "État des paiements" (Payé / En attente / Partiel)
+        · Donut "Types de séances" (Code / Conduite)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-03 : Staff — Accès refusé à la gestion des utilisateurs
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : Connecté en STAFF
+
+  Étapes :
+    1. Tenter d'accéder manuellement à http://localhost:4200/admin/users
+
+  Résultat attendu :
+    - Redirection automatique vers /login ou /staff/dashboard
+    - Page utilisateurs NON accessible au staff
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-04 : Staff — Consultation des étudiants (lecture seule)
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Étudiants" dans la navigation staff
+
+  Résultat attendu :
+    - Liste des étudiants visible
+    - Champ de recherche disponible
+    - PAS de bouton "Nouvel étudiant" ni "Supprimer" (lecture seule)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-05 : Planning — Planifier une séance de conduite
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : Au moins 1 étudiant en base de données
+
+  Étapes :
+    1. Cliquer "Planning" dans la navigation
+    2. Cliquer "Nouvelle séance"
+    3. Remplir :
+         Étudiant    : [sélectionner un étudiant]
+         Date/Heure  : demain à 09:00
+         Type        : CONDUITE
+         Statut      : SCHEDULED
+         Notes       : Séance de conduite en ville
+    4. Cliquer "Enregistrer"
+
+  Résultat attendu :
+    - Séance ajoutée à la liste
+    - Type "CONDUITE" et statut "SCHEDULED" affichés
+    - Notes visibles dans le tableau
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-06 : Planning — Planifier une séance code théorique
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. "Nouvelle séance"
+    2. Remplir :
+         Type    : CODE
+         Statut  : SCHEDULED
+         Notes   : Révision panneaux et priorités
+    3. Enregistrer
+
+  Résultat attendu :
+    - Séance CODE créée avec statut SCHEDULED
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-07 : Planning — Marquer une séance comme terminée
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-STF-05 ou TC-STF-06 réussi
+
+  Étapes :
+    1. Cliquer "Modifier" sur une séance SCHEDULED
+    2. Changer le statut : SCHEDULED → COMPLETED
+    3. Enregistrer
+
+  Résultat attendu :
+    - Statut passe à "COMPLETED"
+    - Badge de couleur change (vert)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-08 : Planning — Annuler une séance
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Modifier une séance SCHEDULED
+    2. Changer statut → CANCELLED
+    3. Enregistrer
+
+  Résultat attendu :
+    - Statut "CANCELLED" affiché (rouge)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-09 : Planning — Supprimer une séance
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Supprimer" sur une séance
+    2. Confirmer
+
+  Résultat attendu :
+    - Séance retirée de la liste
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-10 : Suivi progression — Ajouter une progression CODE
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : Au moins 1 étudiant en base
+
+  Étapes :
+    1. Cliquer "Suivi progression"
+    2. Cliquer "Ajouter" ou modifier une progression
+    3. Remplir :
+         Étudiant         : [sélectionner]
+         Catégorie        : CODE
+         Heures effectuées: 8
+         Heures requises  : 20
+         Score            : 75
+    4. Enregistrer
+
+  Résultat attendu :
+    - Barre de progression visible
+    - 75/100 ou 40% affiché pour les heures
+    - Score 75 visible
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-11 : Suivi progression — Ajouter progression CONDUITE
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Ajouter une progression :
+         Catégorie        : CONDUITE
+         Heures effectuées: 5
+         Heures requises  : 20
+         Score            : 60
+    2. Enregistrer
+
+  Résultat attendu :
+    - Progression CONDUITE affichée
+    - Barre à 25% (5/20 heures)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-12 : Paiements — Enregistrer un paiement complet (PAID / CASH)
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Paiements"
+    2. Cliquer "Nouveau paiement"
+    3. Remplir :
+         Étudiant    : [sélectionner]
+         Montant     : 15000
+         Date        : aujourd'hui
+         Méthode     : CASH
+         Statut      : PAID
+         Description : Règlement formation complète
+    4. Enregistrer
+
+  Résultat attendu :
+    - Paiement visible dans la liste
+    - Badge "PAID" en vert
+    - Montant : 15000.00
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-13 : Paiements — Enregistrer un paiement partiel (PARTIAL / CARD)
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. "Nouveau paiement"
+    2. Remplir :
+         Montant  : 5000
+         Méthode  : CARD
+         Statut   : PARTIAL
+         Desc     : Premier versement
+    3. Enregistrer
+
+  Résultat attendu :
+    - Badge "PARTIAL" (orange)
+    - Méthode "CARD" visible
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-14 : Paiements — Mettre à jour un paiement PENDING → PAID
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Modifier un paiement PENDING
+    2. Changer statut → PAID
+    3. Enregistrer
+
+  Résultat attendu :
+    - Badge passe de ambre (PENDING) à vert (PAID)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-15 : Paiements — Supprimer un paiement
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Supprimer" sur un paiement
+    2. Confirmer
+
+  Résultat attendu :
+    - Paiement retiré de la liste
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-STF-16 : Déconnexion staff
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Cliquer "Déconnexion"
+
+  Résultat attendu :
+    - Redirection vers /login
+    - Token JWT supprimé du localStorage (vérifiable via F12 → Application → Local Storage)
+
+================================================================================
+  PARTIE D — TESTS DE SÉCURITÉ
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SEC-01 : Connexion avec mauvais mot de passe
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Page /login
+    2. Email    : admin@autoecole.com
+       Password : mauvais_mdp
+    3. Cliquer "Connexion"
+
+  Résultat attendu :
+    - Message d'erreur affiché sur la page
+    - PAS de redirection
+    - Token NON stocké dans localStorage
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SEC-02 : Appel API direct sans token → 401
+────────────────────────────────────────────────────────────────────────────────
+  Étapes :
+    1. Ouvrir un terminal / Swagger / Postman
+    2. GET http://localhost:8080/api/admin/students
+       Sans header Authorization
+
+  Résultat attendu :
+    - HTTP 401 Unauthorized
+    - Pas de données retournées
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SEC-03 : Staff ne peut pas appeler les endpoints /api/admin/**
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : Token du compte staff (obtenu via TC-SWG-03 avec staff@autoecole.com)
+
+  Étapes :
+    1. Dans Swagger : Authorize avec token STAFF
+    2. GET /api/admin/users → Execute
+
+  Résultat attendu :
+    - HTTP 403 Forbidden
+    - Pas de liste d'utilisateurs retournée
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SEC-04 : Staff peut appeler les endpoints /api/staff/**
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : TC-SEC-03 (token STAFF dans Swagger)
+
+  Étapes :
+    1. GET /api/staff/students → Execute
+
+  Résultat attendu :
+    - HTTP 200 OK
+    - Liste des étudiants retournée (le staff a le droit)
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-SEC-05 : Admin peut appeler les endpoints /api/staff/**
+────────────────────────────────────────────────────────────────────────────────
+  Prérequis  : Token ADMIN dans Swagger
+
+  Étapes :
+    1. GET /api/staff/planning → Execute
+
+  Résultat attendu :
+    - HTTP 200 OK
+    - L'admin a accès au planning (les deux rôles sont autorisés)
+
+================================================================================
+  PARTIE E — TESTS DES ERREURS PROFESSIONNELLES (Format ErrorBody)
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ERR-01 : Erreur 404 — ressource introuvable
+────────────────────────────────────────────────────────────────────────────────
+  Via Swagger (token admin actif) :
+    GET /api/admin/students/{id}  →  id = 999999
+
+  Résultat attendu — corps exact :
+    {
+      "timestamp": "2026-...",
+      "status": 404,
+      "code": "RESOURCE_NOT_FOUND",
+      "message": "...",
+      "fields": null
+    }
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ERR-02 : Erreur 400 — validation échouée
+────────────────────────────────────────────────────────────────────────────────
+  Via Swagger :
+    POST /api/auth/login
+    Corps : { "email": "", "password": "" }
+
+  Résultat attendu :
+    {
+      "status": 400,
+      "code": "VALIDATION_ERROR",
+      "message": "Un ou plusieurs champs sont invalides",
+      "fields": {
+        "email": "L'email est obligatoire",
+        "password": "Le mot de passe est obligatoire"
+      }
+    }
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ERR-03 : Erreur 401 — identifiants invalides
+────────────────────────────────────────────────────────────────────────────────
+  Via Swagger :
+    POST /api/auth/login
+    Corps : { "email": "inconnu@test.com", "password": "n'importe" }
+
+  Résultat attendu :
+    {
+      "status": 401,
+      "code": "UNAUTHORIZED",
+      "message": "Identifiants invalides",
+      "fields": null
+    }
+
+────────────────────────────────────────────────────────────────────────────────
+  TC-ERR-04 : Erreur 400 — montant de paiement zéro
+────────────────────────────────────────────────────────────────────────────────
+  Via Swagger :
+    POST /api/staff/payments
+    Corps :
+      {
+        "studentId": 1,
+        "amount": 0,
+        "method": "CASH",
+        "status": "PAID"
+      }
+
+  Résultat attendu :
+    {
+      "status": 400,
+      "code": "VALIDATION_ERROR",
+      "fields": {
+        "amount": "Le montant doit être supérieur à 0"
+      }
+    }
+
+================================================================================
+  RÉCAPITULATIF DES CAS DE TEST
+================================================================================
+
+  SWAGGER / OPENAPI  :  TC-SWG-01 → TC-SWG-10   (10 tests)
+  ADMIN              :  TC-ADM-01 → TC-ADM-13    (13 tests)
+  STAFF              :  TC-STF-01 → TC-STF-16    (16 tests)
+  SÉCURITÉ           :  TC-SEC-01 → TC-SEC-05    ( 5 tests)
+  ERREURS            :  TC-ERR-01 → TC-ERR-04    ( 4 tests)
+  ─────────────────────────────────────────────────────────
+  TOTAL                                            48 tests
+
+================================================================================
+  QUESTIONS PROBABLES DU PROFESSEUR
+================================================================================
+
+  Q: Pourquoi Swagger est-il accessible sans token ?
+  R: La page Swagger UI (/swagger-ui.html) et la spec JSON (/api-docs) sont
+     déclarées en permitAll() dans SecurityConfig car ce sont des ressources
+     de documentation. Les endpoints API eux-mêmes restent protégés.
+
+  Q: Comment le token JWT est-il transmis dans Swagger ?
+  R: Via le bouton "Authorize" — on saisit "Bearer {token}". Swagger ajoute
+     automatiquement le header "Authorization: Bearer {token}" à chaque requête.
+
+  Q: Quelle est la différence entre 401 et 403 ?
+  R: 401 Unauthorized = pas authentifié (pas de token ou token invalide).
+     403 Forbidden = authentifié mais pas autorisé (ex: staff sur /api/admin).
+
+  Q: Comment les erreurs de validation sont-elles structurées ?
+  R: Grâce à @Valid sur les paramètres des contrôleurs et @RestControllerAdvice.
+     Le GlobalExceptionHandler intercepte MethodArgumentNotValidException et
+     retourne un ErrorBody avec le code VALIDATION_ERROR + la map des champs.
+
+  Q: Quelles sont les annotations OpenAPI utilisées ?
+  R: @Tag (groupe un contrôleur), @Operation (décrit un endpoint),
+     @ApiResponse (documente un code retour), @Parameter (décrit un paramètre),
+     @Schema (documente un champ de DTO), @SecurityRequirement (sécurité JWT).
+
+================================================================================
+  FIN DU CAHIER DE TEST
+================================================================================
