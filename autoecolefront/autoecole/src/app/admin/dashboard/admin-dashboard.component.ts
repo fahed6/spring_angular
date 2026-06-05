@@ -9,13 +9,13 @@ import { Chart, registerables } from 'chart.js';
 Chart.register(...registerables);
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'app-admin-dashboard',
   standalone: true,
   imports: [NgIf],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  templateUrl: './admin-dashboard.component.html',
+  styleUrl: './admin-dashboard.component.css'
 })
-export class DashboardComponent implements OnInit, OnDestroy {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   private svc        = inject(AdminService);
   private platformId = inject(PLATFORM_ID);
 

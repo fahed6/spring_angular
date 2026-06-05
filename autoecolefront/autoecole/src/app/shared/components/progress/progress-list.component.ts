@@ -7,13 +7,13 @@ import { Progress } from '../../../models/progress.model';
 import { Student } from '../../../models/student.model';
 
 @Component({
-  selector: 'app-progress',
+  selector: 'app-progress-list',
   standalone: true,
   imports: [ReactiveFormsModule, FormsModule, NgIf, NgFor],
-  templateUrl: './progress.component.html',
-  styleUrl: './progress.component.css'
+  templateUrl: './progress-list.component.html',
+  styleUrl: './progress-list.component.css'
 })
-export class ProgressComponent implements OnInit {
+export class ProgressListComponent implements OnInit {
   private svc = inject(StaffService);
   private fb  = inject(FormBuilder);
 

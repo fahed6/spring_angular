@@ -9,13 +9,13 @@ import { Student } from '../../../models/student.model';
 import { studentStatusClass } from '../../utils/badge.utils';
 
 @Component({
-  selector: 'app-students',
+  selector: 'app-student-list',
   standalone: true,
   imports: [ReactiveFormsModule, FormsModule, NgIf, NgFor],
-  templateUrl: './students.component.html',
-  styleUrl: './students.component.css'
+  templateUrl: './student-list.component.html',
+  styleUrl: './student-list.component.css'
 })
-export class StudentsComponent implements OnInit {
+export class StudentListComponent implements OnInit {
   private auth  = inject(AuthService);
   private admin = inject(AdminService);
   private staff = inject(StaffService);

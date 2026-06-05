@@ -7,13 +7,13 @@ import { Student } from '../../../models/student.model';
 import { sessionStatusClass, sessionTypeClass } from '../../utils/badge.utils';
 
 @Component({
-  selector: 'app-planning',
+  selector: 'app-planning-list',
   standalone: true,
   imports: [ReactiveFormsModule, NgIf, NgFor],
-  templateUrl: './planning.component.html',
-  styleUrl: './planning.component.css'
+  templateUrl: './planning-list.component.html',
+  styleUrl: './planning-list.component.css'
 })
-export class PlanningComponent implements OnInit {
+export class PlanningListComponent implements OnInit {
   private svc = inject(StaffService);
   private fb  = inject(FormBuilder);
 

@@ -6,13 +6,13 @@ import { UserInfo } from '../../models/user.model';
 import { userRoleClass, userActiveClass } from '../../shared/utils/badge.utils';
 
 @Component({
-  selector: 'app-users',
+  selector: 'app-user-list',
   standalone: true,
   imports: [ReactiveFormsModule, NgIf, NgFor],
-  templateUrl: './users.component.html',
-  styleUrl: './users.component.css'
+  templateUrl: './user-list.component.html',
+  styleUrl: './user-list.component.css'
 })
-export class UsersComponent implements OnInit {
+export class UserListComponent implements OnInit {
   private svc = inject(AdminService);
   private fb  = inject(FormBuilder);
 

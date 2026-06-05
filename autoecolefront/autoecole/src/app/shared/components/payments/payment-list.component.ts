@@ -8,13 +8,13 @@ import { Student } from '../../../models/student.model';
 import { paymentStatusClass } from '../../utils/badge.utils';
 
 @Component({
-  selector: 'app-payments',
+  selector: 'app-payment-list',
   standalone: true,
   imports: [ReactiveFormsModule, FormsModule, NgIf, NgFor],
-  templateUrl: './payments.component.html',
-  styleUrl: './payments.component.css'
+  templateUrl: './payment-list.component.html',
+  styleUrl: './payment-list.component.css'
 })
-export class PaymentsComponent implements OnInit {
+export class PaymentListComponent implements OnInit {
   private svc = inject(StaffService);
   private fb  = inject(FormBuilder);
 
