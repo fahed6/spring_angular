@@ -2,8 +2,11 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
-import { AdminService } from '../../services/admin.service';
-import { Student } from '../../models/student.model';
+import { AuthService } from '../../../services/auth.service';
+import { AdminService } from '../../../services/admin.service';
+import { StaffService } from '../../../services/staff.service';
+import { Student } from '../../../models/student.model';
+import { studentStatusClass } from '../../utils/badge.utils';
 
 @Component({
   selector: 'app-students',
@@ -13,8 +16,13 @@ import { Student } from '../../models/student.model';
   styleUrl: './students.component.css'
 })
 export class StudentsComponent implements OnInit {
-  private svc = inject(AdminService);
-  private fb  = inject(FormBuilder);
+  private auth  = inject(AuthService);
+  private admin = inject(AdminService);
+  private staff = inject(StaffService);
+  private fb    = inject(FormBuilder);
+
+  // Role determines which API endpoint and which UI actions are shown
+  isAdmin = this.auth.isAdmin();
 
   students:  Student[] = [];
   showModal  = false;
@@ -36,7 +44,12 @@ export class StudentsComponent implements OnInit {
   ngOnInit(): void { this.load(); }
 
   load(): void {
-    this.svc.getStudents(this.search || undefined).subscribe(d => this.students = d);
+    const search = this.search || undefined;
+    // Admin uses /api/admin/students (full CRUD), staff uses /api/staff/students (read-only)
+    const obs = this.isAdmin
+      ? this.admin.getStudents(search)
+      : this.staff.getStudents(search);
+    obs.subscribe(d => this.students = d);
   }
 
   openAdd(): void {
@@ -59,20 +72,20 @@ export class StudentsComponent implements OnInit {
     if (this.form.invalid) return;
     const data = this.form.value;
     const obs  = this.isEdit
-      ? this.svc.updateStudent(this.editId!, data as any)
-      : this.svc.createStudent(data as any);
+      ? this.admin.updateStudent(this.editId!, data as any)
+      : this.admin.createStudent(data as any);
     obs.subscribe({
       next: () => { this.showModal = false; this.load(); },
-      error: err => this.error = err.error?.error ?? 'Erreur'
+      error: err => this.error = err.error?.message ?? 'Erreur lors de l\'enregistrement'
     });
   }
 
   delete(s: Student): void {
     if (!confirm(`Supprimer ${s.firstName} ${s.lastName} ?`)) return;
-    this.svc.deleteStudent(s.id!).subscribe(() => this.load());
+    this.admin.deleteStudent(s.id!).subscribe(() => this.load());
   }
 
   statusClass(st: string): string {
-    return { ACTIVE: 'bg-green-50 text-green-800 border-green-200', COMPLETED: 'bg-blue-50 text-blue-800 border-blue-200', SUSPENDED: 'bg-red-50 text-red-800 border-red-200' }[st] ?? 'bg-slate-50 text-slate-600 border-slate-200';
+    return studentStatusClass(st);
   }
 }

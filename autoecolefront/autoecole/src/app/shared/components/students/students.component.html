@@ -1,14 +1,15 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Étudiants</h1>
-    <p class="page-sub">Gestion des étudiants inscrits</p>
+    <p class="page-sub">{{ isAdmin ? 'Gestion des étudiants inscrits' : 'Consultation — lecture seule' }}</p>
   </div>
-  <button type="button" class="btn-primary" (click)="openAdd()">+ Nouvel étudiant</button>
+  <button *ngIf="isAdmin" type="button" class="btn-primary" (click)="openAdd()">+ Nouvel étudiant</button>
 </div>
 
 <div class="mb-4">
-  <input type="text" [(ngModel)]="search" (input)="load()" placeholder="Rechercher par nom ou email…"
-         class="input-field max-w-xs" />
+  <input type="text" [(ngModel)]="search" (input)="load()"
+         placeholder="Rechercher par nom ou email…"
+         class="input-field max-w-xs" title="Rechercher" />
 </div>
 
 <div class="card-table">
@@ -20,7 +21,7 @@
         <th class="table-th">Téléphone</th>
         <th class="table-th">Statut</th>
         <th class="table-th">Date d'inscription</th>
-        <th class="table-th">Actions</th>
+        <th *ngIf="isAdmin" class="table-th">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -28,24 +29,28 @@
         <td class="table-td font-medium">{{ s.firstName }} {{ s.lastName }}</td>
         <td class="table-td">{{ s.email }}</td>
         <td class="table-td">{{ s.phone }}</td>
-        <td class="table-td"><span class="badge" [class]="statusClass(s.status)">{{ s.status }}</span></td>
-        <td class="table-td">{{ (s.registeredAt ?? '').slice(0,10) }}</td>
         <td class="table-td">
+          <span class="badge" [class]="statusClass(s.status)">{{ s.status }}</span>
+        </td>
+        <td class="table-td">{{ (s.registeredAt ?? '').slice(0,10) }}</td>
+        <td *ngIf="isAdmin" class="table-td">
           <div class="flex gap-2">
-            <button type="button" class="btn-edit" (click)="openEdit(s)">Modifier</button>
+            <button type="button" class="btn-edit"   (click)="openEdit(s)">Modifier</button>
             <button type="button" class="btn-danger" (click)="delete(s)">Supprimer</button>
           </div>
         </td>
       </tr>
       <tr *ngIf="students.length === 0">
-        <td colspan="6" class="table-td text-center py-10">Aucun étudiant trouvé.</td>
+        <td [attr.colspan]="isAdmin ? 6 : 5" class="table-td text-center py-10">
+          Aucun étudiant trouvé.
+        </td>
       </tr>
     </tbody>
   </table>
 </div>
 
-<!-- Modal -->
-<div *ngIf="showModal" class="ent-modal-backdrop" (click)="showModal=false">
+<!-- Modal — admin only -->
+<div *ngIf="showModal && isAdmin" class="ent-modal-backdrop" (click)="showModal=false">
   <div class="ent-modal" (click)="$event.stopPropagation()">
     <div class="ent-modal-header">
       <span class="ent-modal-title">{{ isEdit ? 'Modifier étudiant' : 'Nouvel étudiant' }}</span>

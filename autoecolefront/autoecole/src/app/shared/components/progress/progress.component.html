@@ -6,7 +6,8 @@
 </div>
 
 <div class="mb-5">
-  <select [(ngModel)]="selectedId" (change)="onStudentChange()" class="select-field max-w-xs" title="Sélectionner un étudiant">
+  <select [(ngModel)]="selectedId" (change)="onStudentChange()"
+          class="select-field max-w-xs" title="Sélectionner un étudiant">
     <option [value]="null">-- Sélectionner un étudiant --</option>
     <option *ngFor="let s of students" [value]="s.id">{{ s.firstName }} {{ s.lastName }}</option>
   </select>
@@ -25,9 +26,7 @@
 <div *ngIf="progressList.length > 0" class="cards-grid">
   <div *ngFor="let p of progressList" class="card">
     <div class="flex items-center justify-between mb-4">
-      <span class="badge" [class]="p.category === 'CODE' ? 'bg-purple-50 text-purple-800 border-purple-200' : 'bg-blue-50 text-blue-800 border-blue-200'">
-        {{ p.category }}
-      </span>
+      <span class="badge" [class]="categoryClass(p.category)">{{ p.category }}</span>
       <button type="button" class="btn-edit" (click)="openEdit(p)">Modifier</button>
     </div>
     <div class="prog-row">

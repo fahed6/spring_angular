@@ -3,6 +3,7 @@ import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
 import { AdminService } from '../../services/admin.service';
 import { UserInfo } from '../../models/user.model';
+import { userRoleClass, userActiveClass } from '../../shared/utils/badge.utils';
 
 @Component({
   selector: 'app-users',
@@ -66,6 +67,9 @@ export class UsersComponent implements OnInit {
   }
 
   toggle(u: UserInfo): void { this.svc.toggleUser(u.id!).subscribe(() => this.load()); }
+
+  roleClass(role: string): string    { return userRoleClass(role); }
+  activeClass(active: boolean): string { return userActiveClass(active); }
 
   delete(u: UserInfo): void {
     if (!confirm(`Supprimer l'utilisateur ${u.fullName} ?`)) return;

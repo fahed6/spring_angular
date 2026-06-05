@@ -1,0 +1,5 @@
+.prog-row        { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; color: var(--text-sub); }
+.prog-row strong { color: var(--text); }
+.prog-track      { height: 6px; border-radius: 3px; overflow: hidden; background: #EEEEEE; margin-bottom: 12px; }
+.prog-fill       { height: 100%; border-radius: 3px; background: var(--brand); transition: width 0.3s ease; }
+.prog-meta       { font-size: 12px; margin-top: 12px; color: var(--text-sub); }

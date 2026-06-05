@@ -7,7 +7,8 @@
 </div>
 
 <div class="mb-4">
-  <select [(ngModel)]="selectedStudentId" (change)="load()" class="select-field max-w-xs" title="Filtrer par étudiant">
+  <select [(ngModel)]="selectedStudentId" (change)="load()"
+          class="select-field max-w-xs" title="Filtrer par étudiant">
     <option [value]="null">Tous les étudiants</option>
     <option *ngFor="let s of students" [value]="s.id">{{ s.firstName }} {{ s.lastName }}</option>
   </select>
@@ -36,7 +37,7 @@
         <td class="table-td">{{ p.description || '—' }}</td>
         <td class="table-td">
           <div class="flex gap-2">
-            <button type="button" class="btn-edit" (click)="openEdit(p)">Modifier</button>
+            <button type="button" class="btn-edit"   (click)="openEdit(p)">Modifier</button>
             <button type="button" class="btn-danger" (click)="delete(p)">Supprimer</button>
           </div>
         </td>

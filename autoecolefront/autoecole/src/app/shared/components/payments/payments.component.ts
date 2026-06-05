@@ -2,9 +2,10 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
-import { StaffService } from '../../services/staff.service';
-import { Payment } from '../../models/payment.model';
-import { Student } from '../../models/student.model';
+import { StaffService } from '../../../services/staff.service';
+import { Payment } from '../../../models/payment.model';
+import { Student } from '../../../models/student.model';
+import { paymentStatusClass } from '../../utils/badge.utils';
 
 @Component({
   selector: 'app-payments',
@@ -40,11 +41,15 @@ export class PaymentsComponent implements OnInit {
   }
 
   load(): void {
-    this.svc.getPayments(this.selectedStudentId ?? undefined).subscribe(d => this.payments = d);
+    this.svc.getPayments(this.selectedStudentId ?? undefined)
+            .subscribe(d => this.payments = d);
   }
 
   openAdd(): void {
-    this.form.reset({ method: 'CASH', status: 'PAID', studentId: 0, amount: 0, paidAt: new Date().toISOString().slice(0, 10), description: '' });
+    this.form.reset({
+      method: 'CASH', status: 'PAID', studentId: 0, amount: 0,
+      paidAt: new Date().toISOString().slice(0, 10), description: ''
+    });
     this.isEdit = false; this.editId = undefined; this.error = ''; this.showModal = true;
   }
 
@@ -60,7 +65,7 @@ export class PaymentsComponent implements OnInit {
       : this.svc.createPayment(this.form.value as any);
     obs.subscribe({
       next: () => { this.showModal = false; this.load(); },
-      error: err => this.error = err.error?.error ?? 'Erreur'
+      error: err => this.error = err.error?.message ?? 'Erreur lors de l\'enregistrement'
     });
   }
 
@@ -69,12 +74,10 @@ export class PaymentsComponent implements OnInit {
     this.svc.deletePayment(p.id!).subscribe(() => this.load());
   }
 
-  statusClass(s: string): string {
-    return { PAID: 'bg-green-50 text-green-800 border-green-200', PENDING: 'bg-amber-50 text-amber-800 border-amber-200', PARTIAL: 'bg-orange-50 text-orange-800 border-orange-200' }[s] ?? 'bg-slate-50 text-slate-600 border-slate-200';
-  }
+  statusClass(s: string): string { return paymentStatusClass(s); }
 
   methodLabel(m: string): string {
-    return { CASH: 'Espèces', CARD: 'Carte', TRANSFER: 'Virement' }[m] ?? m;
+    return ({ CASH: 'Espèces', CARD: 'Carte', TRANSFER: 'Virement' } as Record<string, string>)[m] ?? m;
   }
 
   studentName(id: number): string {

@@ -14,11 +14,11 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', loadComponent: () => import('./admin/dashboard/dashboard.component').then(m => m.DashboardComponent) },
-      { path: 'students',  loadComponent: () => import('./admin/students/students.component').then(m => m.StudentsComponent) },
+      { path: 'students',  loadComponent: () => import('./shared/components/students/students.component').then(m => m.StudentsComponent) },
       { path: 'users',     loadComponent: () => import('./admin/users/users.component').then(m => m.UsersComponent) },
-      { path: 'planning',  loadComponent: () => import('./staff/planning/planning.component').then(m => m.PlanningComponent) },
-      { path: 'progress',  loadComponent: () => import('./staff/progress/progress.component').then(m => m.ProgressComponent) },
-      { path: 'payments',  loadComponent: () => import('./staff/payments/payments.component').then(m => m.PaymentsComponent) }
+      { path: 'planning',  loadComponent: () => import('./shared/components/planning/planning.component').then(m => m.PlanningComponent) },
+      { path: 'progress',  loadComponent: () => import('./shared/components/progress/progress.component').then(m => m.ProgressComponent) },
+      { path: 'payments',  loadComponent: () => import('./shared/components/payments/payments.component').then(m => m.PaymentsComponent) }
     ]
   },
   {
@@ -28,10 +28,10 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', loadComponent: () => import('./staff/dashboard/staff-dashboard.component').then(m => m.StaffDashboardComponent) },
-      { path: 'students', loadComponent: () => import('./staff/students/staff-students.component').then(m => m.StaffStudentsComponent) },
-      { path: 'planning', loadComponent: () => import('./staff/planning/planning.component').then(m => m.PlanningComponent) },
-      { path: 'progress', loadComponent: () => import('./staff/progress/progress.component').then(m => m.ProgressComponent) },
-      { path: 'payments', loadComponent: () => import('./staff/payments/payments.component').then(m => m.PaymentsComponent) }
+      { path: 'students',  loadComponent: () => import('./shared/components/students/students.component').then(m => m.StudentsComponent) },
+      { path: 'planning',  loadComponent: () => import('./shared/components/planning/planning.component').then(m => m.PlanningComponent) },
+      { path: 'progress',  loadComponent: () => import('./shared/components/progress/progress.component').then(m => m.ProgressComponent) },
+      { path: 'payments',  loadComponent: () => import('./shared/components/payments/payments.component').then(m => m.PaymentsComponent) }
     ]
   },
   { path: '**', redirectTo: 'login' }

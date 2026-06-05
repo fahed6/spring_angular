@@ -1,9 +1,10 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
-import { StaffService } from '../../services/staff.service';
-import { Planning } from '../../models/planning.model';
-import { Student } from '../../models/student.model';
+import { StaffService } from '../../../services/staff.service';
+import { Planning } from '../../../models/planning.model';
+import { Student } from '../../../models/student.model';
+import { sessionStatusClass, sessionTypeClass } from '../../utils/badge.utils';
 
 @Component({
   selector: 'app-planning',
@@ -55,7 +56,7 @@ export class PlanningComponent implements OnInit {
       : this.svc.createPlanning(this.form.value as any);
     obs.subscribe({
       next: () => { this.showModal = false; this.load(); },
-      error: err => this.error = err.error?.error ?? 'Erreur'
+      error: err => this.error = err.error?.message ?? 'Erreur lors de l\'enregistrement'
     });
   }
 
@@ -64,13 +65,7 @@ export class PlanningComponent implements OnInit {
     this.svc.deletePlanning(p.id!).subscribe(() => this.load());
   }
 
-  statusClass(s: string): string {
-    return { SCHEDULED: 'bg-sky-50 text-sky-800 border-sky-200', COMPLETED: 'bg-green-50 text-green-800 border-green-200', CANCELLED: 'bg-red-50 text-red-800 border-red-200' }[s] ?? 'bg-slate-50 text-slate-600 border-slate-200';
-  }
-
-  typeClass(t: string): string {
-    return t === 'CODE' ? 'bg-purple-50 text-purple-800 border-purple-200' : 'bg-blue-50 text-blue-800 border-blue-200';
-  }
-
-  formatDate(d: string): string { return d ? d.replace('T', ' ').slice(0, 16) : '—'; }
+  statusClass(s: string): string { return sessionStatusClass(s); }
+  typeClass(t: string): string   { return sessionTypeClass(t); }
+  formatDate(d: string): string  { return d ? d.replace('T', ' ').slice(0, 16) : '—'; }
 }

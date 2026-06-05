@@ -2,9 +2,9 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
-import { StaffService } from '../../services/staff.service';
-import { Progress } from '../../models/progress.model';
-import { Student } from '../../models/student.model';
+import { StaffService } from '../../../services/staff.service';
+import { Progress } from '../../../models/progress.model';
+import { Student } from '../../../models/student.model';
 
 @Component({
   selector: 'app-progress',
@@ -36,12 +36,20 @@ export class ProgressComponent implements OnInit {
   }
 
   onStudentChange(): void {
-    if (this.selectedId) this.svc.getProgress(+this.selectedId).subscribe(d => this.progressList = d);
-    else this.progressList = [];
+    if (this.selectedId) {
+      this.svc.getProgress(+this.selectedId).subscribe(d => this.progressList = d);
+    } else {
+      this.progressList = [];
+    }
   }
 
   openEdit(p: Progress): void {
-    this.form.patchValue({ category: p.category, hoursCompleted: p.hoursCompleted, hoursRequired: p.hoursRequired, score: p.score ?? null });
+    this.form.patchValue({
+      category: p.category,
+      hoursCompleted: p.hoursCompleted,
+      hoursRequired: p.hoursRequired,
+      score: p.score ?? null
+    });
     this.editId = p.id;
     this.error = '';
     this.showModal = true;
@@ -59,11 +67,19 @@ export class ProgressComponent implements OnInit {
     const payload = { ...this.form.value, studentId: this.selectedId };
     this.svc.upsertProgress(payload as any).subscribe({
       next: () => { this.showModal = false; this.onStudentChange(); },
-      error: err => this.error = err.error?.error ?? 'Erreur'
+      error: err => this.error = err.error?.message ?? 'Erreur lors de l\'enregistrement'
     });
   }
 
   percent(p: Progress): number {
-    return p.hoursRequired > 0 ? Math.min(100, Math.round((p.hoursCompleted / p.hoursRequired) * 100)) : 0;
+    return p.hoursRequired > 0
+      ? Math.min(100, Math.round((p.hoursCompleted / p.hoursRequired) * 100))
+      : 0;
+  }
+
+  categoryClass(cat: string): string {
+    return cat === 'CODE'
+      ? 'bg-purple-50 text-purple-800 border-purple-200'
+      : 'bg-blue-50 text-blue-800 border-blue-200';
   }
 }
