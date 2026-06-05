@@ -50,10 +50,24 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
+
+        // Allow the Angular dev server and any localhost port during development
+        config.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+
+        // Explicit headers — wildcard is not allowed alongside allowCredentials in CORS spec
+        config.setAllowedHeaders(List.of(
+            "Authorization", "Content-Type", "Accept",
+            "X-Requested-With", "Origin", "Access-Control-Request-Method",
+            "Access-Control-Request-Headers"
+        ));
+
+        // JWT is sent in Authorization header — credentials (cookies) are not used
+        config.setAllowCredentials(false);
+
+        // Cache preflight for 1 hour
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

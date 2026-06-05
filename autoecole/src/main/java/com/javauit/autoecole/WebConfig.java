@@ -1,18 +1,12 @@
 package com.javauit.autoecole;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+// CORS is handled exclusively by SecurityConfig.corsConfigurationSource().
+// Having a second CORS configuration here would produce duplicate
+// Access-Control-Allow-Origin headers, which browsers reject with a 403.
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:4200")
-                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-    }
+    // No addCorsMappings — Spring Security's CorsFilter is the single CORS source.
 }
